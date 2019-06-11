@@ -1,8 +1,8 @@
 #ifndef LLJB_COMPILER_HPP
 #define LLJB_COMPILER_HPP
 
-#include "lljb/LLJBTypes.hpp"
 #include "lljb/Module.hpp"
+#include "ilgen/TypeDictionary.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -24,7 +24,6 @@ private:
     JittedFunction compileMethod(llvm::Function &func);
 
     TR::TypeDictionary _typeDictionary;
-    LLJBTypes _lljbtypes;
     std::vector<JittedFunction> _compiledFunctions;
     Module * _module;
 };
