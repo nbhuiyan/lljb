@@ -21,6 +21,10 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
      * Implemented visitors
      */
     void visitReturnInst(llvm::ReturnInst &I);
+    void visitAllocaInst(llvm::AllocaInst &I);
+    void visitLoadInst(llvm::LoadInst     &I);
+    void visitStoreInst(llvm::StoreInst   &I);
+    void visitBinaryOperator(llvm::BinaryOperator &I);
 
     /**
      * Unimplemented visitors
@@ -29,11 +33,9 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     /* Handles cases of visiting an unimplemented instruction */
     void visitInstruction(llvm::Instruction &I);
 
+    //void visitUnaryOperator(llvm::UnaryOperator &I);
     //void visitICmpInst(llvm::ICmpInst &I);
     //void visitFCmpInst(llvm::FCmpInst &I);
-    //void visitAllocaInst(llvm::AllocaInst &I);
-    //void visitLoadInst(llvm::LoadInst     &I);
-    //void visitStoreInst(llvm::StoreInst   &I);
     //void visitAtomicCmpXchgInst(llvm::AtomicCmpXchgInst &I);
     //void visitAtomicRMWInst(llvm::AtomicRMWInst &I);
     //void visitFenceInst(llvm::FenceInst   &I);
@@ -79,7 +81,6 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     //void visitIntrinsicInst(llvm::IntrinsicInst &I);
     //void visitCallInst(llvm::CallInst &I);
     //void visitInvokeInst(llvm::InvokeInst &I);
-    //void visitReturnInst(llvm::ReturnInst &I);
     //void visitBranchInst(llvm::BranchInst &I);
     //void visitSwitchInst(llvm::SwitchInst &I);
     //void visitIndirectBrInst(llvm::IndirectBrInst &I);
@@ -90,8 +91,6 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     //void visitCatchSwitchInst(llvm::CatchSwitchInst &I);
     //void visitTerminator(llvm::Instruction &I);
     //void visitCastInst(llvm::CastInst &I);
-    //void visitUnaryOperator(llvm::UnaryOperator &I);
-    //void visitBinaryOperator(llvm::BinaryOperator &I);
     //void visitCmpInst(llvm::CmpInst &I);
     //void visitUnaryInstruction(llvm::UnaryInstruction &I);
     //void visitCallBase(llvm::CallBase &I);
@@ -101,6 +100,13 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
 
 private:
     MethodBuilder * _methodBuilder;
+
+    /**
+     * Helpers
+     */
+
+    TR::IlValue * createConstIntIlValue(llvm::Value * value);
+
 
 }; // struct IRVisitor
 

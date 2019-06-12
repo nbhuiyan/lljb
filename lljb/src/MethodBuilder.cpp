@@ -8,7 +8,8 @@ namespace lljb {
 
 MethodBuilder::MethodBuilder(TR::TypeDictionary *td, llvm::Function &func)
     : TR::MethodBuilder(td),
-      _function(func) {
+      _function(func),
+      _valueMap(){
     DefineLine("l");
     DefineFile("f");
     DefineName(func.getName().data());
@@ -31,6 +32,14 @@ TR::IlType * MethodBuilder::getLLJBType(llvm::Type * type){
         else assert("Unsupported integer type");
     }
     else assert ("Unsupported type");
+}
+
+TR::IlValue * MethodBuilder::getIlValue(llvm::Value * value){
+    return _valueMap[value];
+}
+
+void MethodBuilder::mapIRtoILValue(llvm::Value * llvmValue, TR::IlValue * ilValue){
+    _valueMap[llvmValue] = ilValue;
 }
 
 } /* namespace lljb */
