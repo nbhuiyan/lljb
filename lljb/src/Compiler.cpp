@@ -8,7 +8,8 @@ Compiler::Compiler(Module * module)
       _module(module){}
 
 void Compiler::compile(){
-    for (auto func = _module->getLLVMModule()->getFunctionList().begin(); func != _module->getLLVMModule()->getFunctionList().end() ; func++){
+    for (auto func = _module->getLLVMModule()->getFunctionList().begin();
+    func != _module->getLLVMModule()->getFunctionList().end() ; func++){
         _compiledFunctions.push_back(compileMethod(*func));
     }
 }

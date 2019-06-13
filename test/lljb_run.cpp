@@ -5,29 +5,23 @@
 #include "JitBuilder.hpp"
 
 #include "llvm/IR/Module.h"
-#include "llvm/IRReader/IRReader.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/SourceMgr.h"
 
-
 #include <iostream>
-#include <cstdio>
 #include <cassert>
 
-#include <memory>
-
-int main(){
+int main(int argc, char * argv[]){
 
     bool jitInitialized = initializeJit();
-    if (!jitInitialized) assert("Jit Failed to initialize");
+    assert(jitInitialized && "Jit Failed to initialize");
 
+    const char * filename = argv[1]; //todo: better input handling.. this is temporary
 
-    const char * filename = "/Users/nazim/Desktop/testfield/llvm-ir/test.ll"; //temporary.. to be read from argv[1] later
     llvm::LLVMContext context;
     llvm::SMDiagnostic SMDiags;
     lljb::Module module(filename, SMDiags, context);
 
-    //lljb::JittedFunction jc = compiler.generateCode(&module);
     lljb::Compiler compiler(&module);
     compiler.compile();
 

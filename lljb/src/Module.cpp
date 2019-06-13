@@ -24,11 +24,6 @@ Module::Module(const char * filename, llvm::SMDiagnostic &SMDiags, llvm::LLVMCon
     }
     llvm::outs() << "Module loaded:" << _llvmModule->getModuleIdentifier() << "\n";
 
-    //lljb::IRVisitor visitor;
-    //visitor.visit(*_llvmModule);
-    //for (auto func = _llvmModule->getFunctionList().begin(); func != _llvmModule->getFunctionList().end() ; func++){
-    //    visitor.visit(*func);
-    //}
 }
 
 } // namespace lljb

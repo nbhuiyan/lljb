@@ -5,7 +5,7 @@
 namespace lljb {
 
 void IRVisitor::visitInstruction(llvm::Instruction &I){
-    assert("Unimplemented instruction!\n");
+    assert(0 && "Unimplemented instruction!\n");
 }
 
 void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
@@ -60,7 +60,7 @@ void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
             result = _methodBuilder->Div(lhs, rhs);
             break;
         default:
-            assert("Unknown binary operand");
+            assert(0 && "Unknown binary operand");
             break;
     }
     _methodBuilder->mapIRtoILValue(&I, result);
