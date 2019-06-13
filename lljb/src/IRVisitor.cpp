@@ -9,6 +9,7 @@ void IRVisitor::visitInstruction(llvm::Instruction &I){
 }
 
 void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
+    llvm::outs() << "return inst: " << I << "\n";
     llvm::Value * value = I.getOperand(0);
     TR::IlValue * ilValue = _methodBuilder->getIlValue(value);
 
@@ -23,14 +24,14 @@ void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
 }
 
 void IRVisitor::visitLoadInst(llvm::LoadInst &I){
-    llvm::outs() << "load inst: " << *I.getPointerOperand() << "\n";
-    TR::IlValue * ilValue = _methodBuilder->getIlValue(I.getPointerOperand());
+    llvm::outs() << "load inst: " << I << "\n";
+    llvm::Value * source = I.getPointerOperand();
+    TR::IlValue * ilValue = _methodBuilder->getIlValue(source);
     _methodBuilder->mapIRtoILValue(&I, ilValue);
-    llvm::Value * src = I.getPointerOperand();
 }
 
 void IRVisitor::visitStoreInst(llvm::StoreInst &I){
-    llvm::outs() << "store inst: " << *I.getPointerOperand() << "\n";
+    llvm::outs() << "store inst: " << I << "\n";
     llvm::Value * dest = I.getPointerOperand();
     llvm::Value * value = I.getOperand(0);
     TR::IlValue * ilValue = _methodBuilder->getIlValue(value);
@@ -41,13 +42,28 @@ void IRVisitor::visitStoreInst(llvm::StoreInst &I){
 }
 
 void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
-    /**
-     * TODO: ONLY HANDLES ADDITION OPERATION!!!!!!
-     */
-    llvm::outs() << "binaryOp inst: " << *I.getOperand(0) << *I.getOperand(1) <<  "\n";
+    llvm::outs() << "binaryOp inst: " << I << "\n";
     TR::IlValue * lhs = _methodBuilder->getIlValue(I.getOperand(0));
     TR::IlValue * rhs = _methodBuilder->getIlValue(I.getOperand(1));
-    _methodBuilder->mapIRtoILValue(&I, _methodBuilder->Add(lhs, rhs));
+    TR::IlValue * result = nullptr;
+    switch (I.getOpcode()){
+        case llvm::BinaryOperator::Add:
+            result = _methodBuilder->Add(lhs,rhs);
+            break;
+        case llvm::BinaryOperator::Sub:
+            result = _methodBuilder->Sub(lhs, rhs);
+            break;
+        case llvm::BinaryOperator::Mul:
+            result = _methodBuilder->Mul(lhs, rhs);
+            break;
+        case llvm::BinaryOperator::SDiv:
+            result = _methodBuilder->Div(lhs, rhs);
+            break;
+        default:
+            assert("Unknown binary operand");
+            break;
+    }
+    _methodBuilder->mapIRtoILValue(&I, result);
 }
 
 TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
