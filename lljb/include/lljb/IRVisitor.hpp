@@ -4,6 +4,8 @@
 #include "llvm/IR/InstVisitor.h"
 #include "lljb/MethodBuilder.hpp"
 
+#include "llvm/ADT/DenseMap.h"
+
 namespace lljb {
 
 struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
@@ -100,12 +102,15 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
 
 private:
     MethodBuilder * _methodBuilder;
+    llvm::DenseMap<llvm::Value *, TR::IlValue *> _valueMap;
 
     /**
      * Helpers
      */
 
     TR::IlValue * createConstIntIlValue(llvm::Value * value);
+    TR::IlValue * getIlValue(llvm::Value * value);
+    void mapIRtoIlValue(llvm::Value * irValue, TR::IlValue * ilValue);
 
 
 }; // struct IRVisitor

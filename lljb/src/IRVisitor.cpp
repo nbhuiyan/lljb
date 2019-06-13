@@ -11,7 +11,7 @@ void IRVisitor::visitInstruction(llvm::Instruction &I){
 void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
     llvm::outs() << "return inst: " << I << "\n";
     llvm::Value * value = I.getOperand(0);
-    TR::IlValue * ilValue = _methodBuilder->getIlValue(value);
+    TR::IlValue * ilValue = getIlValue(value);
 
     if (!ilValue) ilValue = createConstIntIlValue(value);
 
@@ -20,31 +20,31 @@ void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
 
 void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
     llvm::outs() << "alloca inst: " << I << "\n";
-    _methodBuilder->mapIRtoILValue(&I, nullptr);
+    mapIRtoIlValue(&I, nullptr);
 }
 
 void IRVisitor::visitLoadInst(llvm::LoadInst &I){
     llvm::outs() << "load inst: " << I << "\n";
     llvm::Value * source = I.getPointerOperand();
-    TR::IlValue * ilValue = _methodBuilder->getIlValue(source);
-    _methodBuilder->mapIRtoILValue(&I, ilValue);
+    TR::IlValue * ilValue = getIlValue(source);
+    mapIRtoIlValue(&I, ilValue);
 }
 
 void IRVisitor::visitStoreInst(llvm::StoreInst &I){
     llvm::outs() << "store inst: " << I << "\n";
     llvm::Value * dest = I.getPointerOperand();
     llvm::Value * value = I.getOperand(0);
-    TR::IlValue * ilValue = _methodBuilder->getIlValue(value);
+    TR::IlValue * ilValue = getIlValue(value);
 
     if (!ilValue) ilValue = createConstIntIlValue(value);
 
-    _methodBuilder->mapIRtoILValue(dest, ilValue);
+    mapIRtoIlValue(dest, ilValue);
 }
 
 void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
     llvm::outs() << "binaryOp inst: " << I << "\n";
-    TR::IlValue * lhs = _methodBuilder->getIlValue(I.getOperand(0));
-    TR::IlValue * rhs = _methodBuilder->getIlValue(I.getOperand(1));
+    TR::IlValue * lhs = getIlValue(I.getOperand(0));
+    TR::IlValue * rhs = getIlValue(I.getOperand(1));
     TR::IlValue * result = nullptr;
     switch (I.getOpcode()){
         case llvm::BinaryOperator::Add:
@@ -63,7 +63,7 @@ void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
             assert(0 && "Unknown binary operand");
             break;
     }
-    _methodBuilder->mapIRtoILValue(&I, result);
+    mapIRtoIlValue(&I, result);
 }
 
 TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
@@ -76,6 +76,13 @@ TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
     else if (constInt->getBitWidth() <= 64) ilValue = _methodBuilder->ConstInt64(signExtendedValue);
 
     return ilValue;
+}
+
+TR::IlValue * IRVisitor::getIlValue(llvm::Value * value){
+    return _valueMap[value];
+}
+void IRVisitor::mapIRtoIlValue(llvm::Value * irValue, TR::IlValue * ilValue){
+    _valueMap[irValue] = ilValue;
 }
 
 } /* namespace lljb */

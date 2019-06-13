@@ -8,8 +8,7 @@ namespace lljb {
 
 MethodBuilder::MethodBuilder(TR::TypeDictionary *td, llvm::Function &func)
     : TR::MethodBuilder(td),
-      _function(func),
-      _valueMap(){
+      _function(func){
     DefineFile(func.getParent()->getSourceFileName().data());
     DefineLine("n/a"); // line numer is only available if the bitcode file was
                        // generated with debug info, hence not dealing with that
@@ -32,14 +31,6 @@ TR::IlType * MethodBuilder::getLLJBType(llvm::Type * type){
         else assert(0 && "Unsupported integer type");
     }
     else assert (0 && "Unsupported type");
-}
-
-TR::IlValue * MethodBuilder::getIlValue(llvm::Value * value){
-    return _valueMap[value];
-}
-
-void MethodBuilder::mapIRtoILValue(llvm::Value * llvmValue, TR::IlValue * ilValue){
-    _valueMap[llvmValue] = ilValue;
 }
 
 } /* namespace lljb */
