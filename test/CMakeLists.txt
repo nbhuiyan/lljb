@@ -16,3 +16,4 @@ target_link_libraries(lljb_run
 )
 
 add_subdirectory(cpp)
+add_subdirectory(c)
