@@ -14,11 +14,18 @@ MethodBuilder::MethodBuilder(TR::TypeDictionary *td, llvm::Function &func)
                        // generated with debug info, hence not dealing with that
     DefineName(func.getName().data());
     DefineReturnType(getLLJBType(func.getReturnType()));
+    setUseBytecodeBuilders();
 }
 
 bool MethodBuilder::buildIL(){
-    IRVisitor visitor(this);
-    visitor.visit(_function);
+    assignBuildersToBasicBlocks();
+
+    for (auto bbIterator = _function.begin(); bbIterator != _function.end(); bbIterator++){
+        TR::BytecodeBuilder * builder = _BBToBuilderMap[&(*bbIterator)];
+        IRVisitor visitor(this, builder);
+        visitor.visit(*bbIterator);
+    }
+
     return true;
 }
 
@@ -31,6 +38,25 @@ TR::IlType * MethodBuilder::getLLJBType(llvm::Type * type){
         else assert(0 && "Unsupported integer type");
     }
     else assert (0 && "Unsupported type");
+}
+
+void MethodBuilder::assignBuildersToBasicBlocks(){
+    for (auto bbIterator = _function.begin(); bbIterator != _function.end(); bbIterator++){
+        _BBToBuilderMap[&(*bbIterator)] = OrphanBytecodeBuilder();
+    }
+    AppendBytecodeBuilder(_BBToBuilderMap[&(*_function.begin())]);
+}
+
+TR::IlValue * MethodBuilder::getIlValue(llvm::Value * value){
+    return _valueMap[value];
+}
+
+void MethodBuilder::mapIRtoIlValue(llvm::Value * irValue, TR::IlValue * ilValue){
+    _valueMap[irValue] = ilValue;
+}
+
+TR::BytecodeBuilder * MethodBuilder::getByteCodeBuilder(llvm::Value * value){
+    return _BBToBuilderMap[value];
 }
 
 } /* namespace lljb */

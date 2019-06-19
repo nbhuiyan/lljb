@@ -1,16 +1,16 @@
 #ifndef LLJB_IRVISITOR_HPP
 #define LLJB_IRVISITOR_HPP
 
-#include "llvm/IR/InstVisitor.h"
 #include "lljb/MethodBuilder.hpp"
 
-#include "llvm/ADT/DenseMap.h"
+#include "llvm/IR/InstVisitor.h"
 
 namespace lljb {
 
 struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
-    IRVisitor(MethodBuilder* methodBuilder)
-        :_methodBuilder(methodBuilder)
+    IRVisitor(MethodBuilder* methodBuilder, TR::BytecodeBuilder* builder)
+        :_methodBuilder(methodBuilder),
+         _builder(builder)
     {}
 
     /************************************************************************
@@ -102,15 +102,13 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
 
 private:
     MethodBuilder * _methodBuilder;
-    llvm::DenseMap<llvm::Value *, TR::IlValue *> _valueMap;
 
     /**
      * Helpers
      */
 
     TR::IlValue * createConstIntIlValue(llvm::Value * value);
-    TR::IlValue * getIlValue(llvm::Value * value);
-    void mapIRtoIlValue(llvm::Value * irValue, TR::IlValue * ilValue);
+    TR::BytecodeBuilder * _builder;
 
 
 }; // struct IRVisitor

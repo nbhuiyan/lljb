@@ -25,4 +25,4 @@ generate_module_from_cpp(add)
 generate_module_from_cpp(sub)
 generate_module_from_cpp(mul)
 generate_module_from_cpp(div)
-
+generate_module_from_cpp(conditional)

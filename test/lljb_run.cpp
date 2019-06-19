@@ -1,5 +1,4 @@
 #include "lljb/Module.hpp"
-#include "lljb/MethodBuilder.hpp"
 #include "lljb/Compiler.hpp"
 #include "lljb/IRVisitor.hpp"
 #include "JitBuilder.hpp"
