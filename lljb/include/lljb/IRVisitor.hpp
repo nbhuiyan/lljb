@@ -8,9 +8,10 @@
 namespace lljb {
 
 struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
-    IRVisitor(MethodBuilder* methodBuilder, TR::BytecodeBuilder* builder)
+    IRVisitor(MethodBuilder* methodBuilder, TR::BytecodeBuilder* builder, TR::TypeDictionary * td)
         :_methodBuilder(methodBuilder),
-         _builder(builder)
+         _builder(builder),
+         _td(td)
     {}
 
     /************************************************************************
@@ -27,6 +28,8 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     void visitLoadInst(llvm::LoadInst     &I);
     void visitStoreInst(llvm::StoreInst   &I);
     void visitBinaryOperator(llvm::BinaryOperator &I);
+    void visitICmpInst(llvm::ICmpInst &I);
+    void visitBranchInst(llvm::BranchInst &I);
 
     /**
      * Unimplemented visitors
@@ -36,7 +39,6 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     void visitInstruction(llvm::Instruction &I);
 
     //void visitUnaryOperator(llvm::UnaryOperator &I);
-    //void visitICmpInst(llvm::ICmpInst &I);
     //void visitFCmpInst(llvm::FCmpInst &I);
     //void visitAtomicCmpXchgInst(llvm::AtomicCmpXchgInst &I);
     //void visitAtomicRMWInst(llvm::AtomicRMWInst &I);
@@ -83,7 +85,6 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     //void visitIntrinsicInst(llvm::IntrinsicInst &I);
     //void visitCallInst(llvm::CallInst &I);
     //void visitInvokeInst(llvm::InvokeInst &I);
-    //void visitBranchInst(llvm::BranchInst &I);
     //void visitSwitchInst(llvm::SwitchInst &I);
     //void visitIndirectBrInst(llvm::IndirectBrInst &I);
     //void visitResumeInst(llvm::ResumeInst &I);
@@ -109,6 +110,7 @@ private:
 
     TR::IlValue * createConstIntIlValue(llvm::Value * value);
     TR::BytecodeBuilder * _builder;
+    TR::TypeDictionary * _td;
 
 
 }; // struct IRVisitor

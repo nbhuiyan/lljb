@@ -3,11 +3,27 @@
 
 #include "ilgen/MethodBuilder.hpp"
 #include "ilgen/BytecodeBuilder.hpp"
+#include "ilgen/VirtualMachineState.hpp"
 
 #include "llvm/IR/Function.h"
 #include "llvm/ADT/DenseMap.h"
 
 namespace lljb {
+
+class State : public TR::VirtualMachineState {
+    public:
+
+    virtual void Commit(TR::IlBuilder *b) override final {}
+
+    virtual void Reload(TR::IlBuilder *b) override final {}
+
+    virtual VirtualMachineState *MakeCopy() override final {
+    return new State(*this);
+    }
+
+    virtual void MergeInto(TR::VirtualMachineState *other,
+                           TR::IlBuilder *b) override final {}
+};
 
 class MethodBuilder : public TR::MethodBuilder {
 

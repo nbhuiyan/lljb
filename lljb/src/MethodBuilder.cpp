@@ -15,15 +15,23 @@ MethodBuilder::MethodBuilder(TR::TypeDictionary *td, llvm::Function &func)
     DefineName(func.getName().data());
     DefineReturnType(getLLJBType(func.getReturnType()));
     setUseBytecodeBuilders();
+    
 }
 
 bool MethodBuilder::buildIL(){
+    State * state = new State();
+    setVMState(state);
     assignBuildersToBasicBlocks();
 
-    for (auto bbIterator = _function.begin(); bbIterator != _function.end(); bbIterator++){
-        TR::BytecodeBuilder * builder = _BBToBuilderMap[&(*bbIterator)];
-        IRVisitor visitor(this, builder);
-        visitor.visit(*bbIterator);
+    TR::BytecodeBuilder * firstBuilder = _BBToBuilderMap[&(_function.getEntryBlock())];
+    assert (firstBuilder && "first builder not found!");
+    AppendBytecodeBuilder(firstBuilder);
+
+    for (llvm::BasicBlock &BB : _function){
+        TR::BytecodeBuilder * builder = _BBToBuilderMap[&BB];
+        builder->setVMState(state); // why does every bytecodebuilder need this set?
+        IRVisitor visitor(this, builder,typeDictionary());
+        visitor.visit(BB);
     }
 
     return true;
@@ -41,10 +49,13 @@ TR::IlType * MethodBuilder::getLLJBType(llvm::Type * type){
 }
 
 void MethodBuilder::assignBuildersToBasicBlocks(){
-    for (auto bbIterator = _function.begin(); bbIterator != _function.end(); bbIterator++){
-        _BBToBuilderMap[&(*bbIterator)] = OrphanBytecodeBuilder();
+    int32_t index = 0;
+
+    for (llvm::BasicBlock &BB : _function){
+        TR::BytecodeBuilder * currentBuilder = OrphanBytecodeBuilder(index);
+        _BBToBuilderMap[&BB] = currentBuilder;
+        index ++;
     }
-    AppendBytecodeBuilder(_BBToBuilderMap[&(*_function.begin())]);
 }
 
 TR::IlValue * MethodBuilder::getIlValue(llvm::Value * value){
