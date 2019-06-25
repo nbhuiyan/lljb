@@ -102,13 +102,17 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
 
 
 private:
-    MethodBuilder * _methodBuilder;
-
     /**
      * Helpers
      */
 
     TR::IlValue * createConstIntIlValue(llvm::Value * value);
+    TR::IlValue * getIlValue(llvm::Value * value);
+
+    /**
+     * Private fields
+     */
+    MethodBuilder * _methodBuilder;
     TR::BytecodeBuilder * _builder;
     TR::TypeDictionary * _td;
 

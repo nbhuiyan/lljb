@@ -15,25 +15,20 @@ void IRVisitor::visitInstruction(llvm::Instruction &I){
 void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
     llvm::outs() << "return inst: " << I << "\n";
     llvm::Value * value = I.getOperand(0);
-    TR::IlValue * ilValue = nullptr; //_methodBuilder->getIlValue(value);
-
-    if (value->getValueID() == llvm::Value::ConstantIntVal)
-        ilValue = createConstIntIlValue(value);
-    else ilValue = _methodBuilder->getIlValue(value);
-
+    TR::IlValue * ilValue = getIlValue(value);
     _builder->Return(ilValue);
 }
 
 void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
     llvm::outs() << "alloca inst: " << I << "\n";
-    TR::IlValue * ilValue = _builder->CreateLocalArray(1,_td->Int32);//_builder->NewValue(_builder->Int32);// ;
+    TR::IlValue * ilValue = _builder->CreateLocalArray(1,_td->Int32);
     _methodBuilder->mapIRtoIlValue(&I, ilValue);
 }
 
 void IRVisitor::visitLoadInst(llvm::LoadInst &I){
     llvm::outs() << "load inst: " << I << "\n";
     llvm::Value * source = I.getPointerOperand();
-    TR::IlValue * ilSrc = _methodBuilder->getIlValue(source);
+    TR::IlValue * ilSrc = getIlValue(source);
     TR::IlValue * ilDest = _builder->LoadAt(
                                 _td->pInt32,
                                 _builder->
@@ -48,10 +43,7 @@ void IRVisitor::visitStoreInst(llvm::StoreInst &I){
     llvm::outs() << "store inst: " << I << "\n";
     llvm::Value * dest = I.getPointerOperand();
     llvm::Value * value = I.getOperand(0);
-    TR::IlValue * ilValue = nullptr;
-    if (value->getValueID() == llvm::Value::ConstantIntVal)
-        ilValue = createConstIntIlValue(value);
-    else ilValue = _methodBuilder->getIlValue(value);
+    TR::IlValue * ilValue = getIlValue(value);
 
     _builder->StoreAt(
                 _builder->IndexAt(
@@ -63,10 +55,8 @@ void IRVisitor::visitStoreInst(llvm::StoreInst &I){
 
 void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
     llvm::outs() << "binaryOp inst: " << I << "\n";
-    TR::IlValue * lhs = _methodBuilder->getIlValue(I.getOperand(0));
-    TR::IlValue * rhs = _methodBuilder->getIlValue(I.getOperand(1));
-    if (!lhs) lhs = createConstIntIlValue(I.getOperand(0));
-    if (!rhs) rhs = createConstIntIlValue(I.getOperand(1));
+    TR::IlValue * lhs = getIlValue(I.getOperand(0));
+    TR::IlValue * rhs = getIlValue(I.getOperand(1));
     TR::IlValue * result = nullptr;
     switch (I.getOpcode()){
         case llvm::BinaryOperator::Add:
@@ -90,11 +80,8 @@ void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
 
 void IRVisitor::visitICmpInst(llvm::ICmpInst &I){
     llvm::outs() << "icmp inst: " << I << "\n";
-    TR::IlValue * lhs = _methodBuilder->getIlValue(I.getOperand(0));
-    TR::IlValue * rhs = _methodBuilder->getIlValue(I.getOperand(1));
-
-    if (!lhs) lhs = createConstIntIlValue(I.getOperand(0));
-    if (!rhs) rhs = createConstIntIlValue(I.getOperand(1));
+    TR::IlValue * lhs = getIlValue(I.getOperand(0));
+    TR::IlValue * rhs = getIlValue(I.getOperand(1));
 
     TR::IlValue * result = nullptr;
 
@@ -162,6 +149,15 @@ TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
     else if (constInt->getBitWidth() <= 16) ilValue = _builder->ConstInt16(signExtendedValue);
     else if (constInt->getBitWidth() <= 32) ilValue = _builder->ConstInt32(signExtendedValue);
     else if (constInt->getBitWidth() <= 64) ilValue = _builder->ConstInt64(signExtendedValue);
+
+    return ilValue;
+}
+
+TR::IlValue * IRVisitor::getIlValue(llvm::Value * value){
+    TR::IlValue * ilValue = nullptr;
+    if (value->getValueID() == llvm::Value::ConstantIntVal)
+        ilValue = createConstIntIlValue(value);
+    else ilValue = _methodBuilder->getIlValue(value);
 
     return ilValue;
 }
