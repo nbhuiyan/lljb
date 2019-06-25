@@ -10,6 +10,8 @@
 
 namespace lljb {
 
+class Compiler;
+
 class State : public TR::VirtualMachineState {
     public:
 
@@ -28,12 +30,13 @@ class State : public TR::VirtualMachineState {
 class MethodBuilder : public TR::MethodBuilder {
 
 public:
-    MethodBuilder(TR::TypeDictionary *td, llvm::Function &func);
-    TR::IlType * getLLJBType(llvm::Type * type);
+    MethodBuilder(TR::TypeDictionary *td, llvm::Function &func, Compiler * compiler);
+    TR::IlType * getIlType(llvm::Type * type);
     virtual bool buildIL() override;
     TR::IlValue * getIlValue(llvm::Value * value);
     void mapIRtoIlValue(llvm::Value * irValue, TR::IlValue * ilValue);
     TR::BytecodeBuilder * getByteCodeBuilder(llvm::Value * value);
+    void defineFunction(llvm::Function * func);
 
 private:
     void assignBuildersToBasicBlocks();
@@ -41,6 +44,7 @@ private:
     llvm::Function& _function;
     llvm::DenseMap<llvm::Value *, TR::BytecodeBuilder * > _BBToBuilderMap;
     llvm::DenseMap<llvm::Value *, TR::IlValue *> _valueMap;
+    Compiler * _compiler;
 
 }; /* class MethodBuilder */
 

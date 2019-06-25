@@ -24,7 +24,7 @@ int main(int argc, char * argv[]){
     lljb::Compiler compiler(&module);
     compiler.compile();
 
-    lljb::JittedFunction jc = compiler.getFunction(0);
+    lljb::JittedFunction jc = compiler.getJittedCodeEntry();
     auto result = jc();
     std::cout << "return value: " << result << std::endl;
 

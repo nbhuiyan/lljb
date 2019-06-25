@@ -141,6 +141,15 @@ void IRVisitor::visitBranchInst(llvm::BranchInst &I){
     }
 }
 
+void IRVisitor::visitCallInst(llvm::CallInst &I){
+    llvm::outs() << "call inst: " << I << "\n";
+    llvm::Function * callee = I.getCalledFunction();
+    _methodBuilder->defineFunction(callee);
+    TR::IlValue * ilValue = _builder->Call(callee->getName().data(),
+                                           0);
+    _methodBuilder->mapIRtoIlValue(&I, ilValue);
+}
+
 TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
     TR::IlValue * ilValue = nullptr;
     llvm::ConstantInt * constInt = llvm::dyn_cast<llvm::ConstantInt>(value);

@@ -30,6 +30,7 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     void visitBinaryOperator(llvm::BinaryOperator &I);
     void visitICmpInst(llvm::ICmpInst &I);
     void visitBranchInst(llvm::BranchInst &I);
+    void visitCallInst(llvm::CallInst &I);
 
     /**
      * Unimplemented visitors
@@ -83,7 +84,6 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     //void visitVAEndInst(llvm::VAEndInst &I);
     //void visitVACopyInst(llvm::VACopyInst &I);
     //void visitIntrinsicInst(llvm::IntrinsicInst &I);
-    //void visitCallInst(llvm::CallInst &I);
     //void visitInvokeInst(llvm::InvokeInst &I);
     //void visitSwitchInst(llvm::SwitchInst &I);
     //void visitIndirectBrInst(llvm::IndirectBrInst &I);
