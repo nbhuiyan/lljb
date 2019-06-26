@@ -4,6 +4,7 @@
 #include "ilgen/BytecodeBuilder.hpp"
 
 #include <cassert>
+#include <vector>
 
 namespace lljb {
 
@@ -143,11 +144,23 @@ void IRVisitor::visitBranchInst(llvm::BranchInst &I){
 
 void IRVisitor::visitCallInst(llvm::CallInst &I){
     llvm::outs() << "call inst: " << I << "\n";
+    TR::IlValue * result = nullptr;
     llvm::Function * callee = I.getCalledFunction();
+    const char * calleeName = callee->getName().data();
     _methodBuilder->defineFunction(callee);
-    TR::IlValue * ilValue = _builder->Call(callee->getName().data(),
-                                           0);
-    _methodBuilder->mapIRtoIlValue(&I, ilValue);
+    std::size_t numArgs = callee->arg_size();
+    if (!numArgs){
+        result = _builder->Call(calleeName, numArgs);
+    }
+    else {
+        std::vector<TR::IlValue *> params;
+        for (int i = 0; i < numArgs; i++){
+            TR::IlValue * parameter = getIlValue(I.getArgOperand(i));
+            params.push_back(parameter);
+        }
+        result = _builder->Call(calleeName, numArgs, params.data());
+    }
+    _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
 TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
@@ -162,12 +175,27 @@ TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
     return ilValue;
 }
 
+TR::IlValue * IRVisitor::loadParameter(llvm::Value * value){
+    TR::IlValue * ilValue = nullptr;
+    llvm::Argument * arg = llvm::dyn_cast<llvm::Argument>(value);
+    ilValue = _builder->Load(_methodBuilder->getParamNameFromIndex(arg->getArgNo()));
+    return ilValue;
+}
+
 TR::IlValue * IRVisitor::getIlValue(llvm::Value * value){
     TR::IlValue * ilValue = nullptr;
-    if (value->getValueID() == llvm::Value::ConstantIntVal)
-        ilValue = createConstIntIlValue(value);
-    else ilValue = _methodBuilder->getIlValue(value);
-
+    switch (value->getValueID()){
+        case llvm::Value::ValueTy::ConstantIntVal:
+            ilValue = createConstIntIlValue(value);
+            break;
+        case llvm::Value::ValueTy::ArgumentVal:
+            ilValue = loadParameter(value);
+            break;
+        default:
+            ilValue = _methodBuilder->getIlValue(value);
+            break;
+    }
+    assert (ilValue && "failed to retrieve ilValue from llvm Value!");
     return ilValue;
 }
 

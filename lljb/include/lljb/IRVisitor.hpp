@@ -107,6 +107,7 @@ private:
      */
 
     TR::IlValue * createConstIntIlValue(llvm::Value * value);
+    TR::IlValue * loadParameter(llvm::Value * value);
     TR::IlValue * getIlValue(llvm::Value * value);
 
     /**
