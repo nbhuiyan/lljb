@@ -1,14 +1,17 @@
 #ifndef LLJB_IRVISITOR_HPP
 #define LLJB_IRVISITOR_HPP
 
-#include "llvm/IR/InstVisitor.h"
 #include "lljb/MethodBuilder.hpp"
+
+#include "llvm/IR/InstVisitor.h"
 
 namespace lljb {
 
 struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
-    IRVisitor(MethodBuilder* methodBuilder)
-        :_methodBuilder(methodBuilder)
+    IRVisitor(MethodBuilder* methodBuilder, TR::BytecodeBuilder* builder, TR::TypeDictionary * td)
+        :_methodBuilder(methodBuilder),
+         _builder(builder),
+         _td(td)
     {}
 
     /************************************************************************
@@ -25,6 +28,9 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     void visitLoadInst(llvm::LoadInst     &I);
     void visitStoreInst(llvm::StoreInst   &I);
     void visitBinaryOperator(llvm::BinaryOperator &I);
+    void visitICmpInst(llvm::ICmpInst &I);
+    void visitBranchInst(llvm::BranchInst &I);
+    void visitCallInst(llvm::CallInst &I);
 
     /**
      * Unimplemented visitors
@@ -34,7 +40,6 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     void visitInstruction(llvm::Instruction &I);
 
     //void visitUnaryOperator(llvm::UnaryOperator &I);
-    //void visitICmpInst(llvm::ICmpInst &I);
     //void visitFCmpInst(llvm::FCmpInst &I);
     //void visitAtomicCmpXchgInst(llvm::AtomicCmpXchgInst &I);
     //void visitAtomicRMWInst(llvm::AtomicRMWInst &I);
@@ -79,9 +84,7 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     //void visitVAEndInst(llvm::VAEndInst &I);
     //void visitVACopyInst(llvm::VACopyInst &I);
     //void visitIntrinsicInst(llvm::IntrinsicInst &I);
-    //void visitCallInst(llvm::CallInst &I);
     //void visitInvokeInst(llvm::InvokeInst &I);
-    //void visitBranchInst(llvm::BranchInst &I);
     //void visitSwitchInst(llvm::SwitchInst &I);
     //void visitIndirectBrInst(llvm::IndirectBrInst &I);
     //void visitResumeInst(llvm::ResumeInst &I);
@@ -99,13 +102,20 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
 
 
 private:
-    MethodBuilder * _methodBuilder;
-
     /**
      * Helpers
      */
 
     TR::IlValue * createConstIntIlValue(llvm::Value * value);
+    TR::IlValue * loadParameter(llvm::Value * value);
+    TR::IlValue * getIlValue(llvm::Value * value);
+
+    /**
+     * Private fields
+     */
+    MethodBuilder * _methodBuilder;
+    TR::BytecodeBuilder * _builder;
+    TR::TypeDictionary * _td;
 
 
 }; // struct IRVisitor

@@ -1,5 +1,4 @@
 #include "lljb/Module.hpp"
-#include "lljb/MethodBuilder.hpp"
 #include "lljb/Compiler.hpp"
 #include "lljb/IRVisitor.hpp"
 #include "JitBuilder.hpp"
@@ -25,7 +24,7 @@ int main(int argc, char * argv[]){
     lljb::Compiler compiler(&module);
     compiler.compile();
 
-    lljb::JittedFunction jc = compiler.getFunction(0);
+    lljb::JittedFunction jc = compiler.getJittedCodeEntry();
     auto result = jc();
     std::cout << "return value: " << result << std::endl;
 

@@ -26,4 +26,10 @@ Module::Module(const char * filename, llvm::SMDiagnostic &SMDiags, llvm::LLVMCon
 
 }
 
+llvm::Function * Module::getMainFunction(){
+    if (numFunctions() == 1)
+        return &(*(funcIterBegin()));
+    return _llvmModule->getFunction("main");
+}
+
 } // namespace lljb

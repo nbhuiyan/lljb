@@ -8,17 +8,30 @@ Compiler::Compiler(Module * module)
       _module(module){}
 
 void Compiler::compile(){
-    for (auto func = _module->getLLVMModule()->getFunctionList().begin();
-    func != _module->getLLVMModule()->getFunctionList().end() ; func++){
-        _compiledFunctions.push_back(compileMethod(*func));
+    for (auto func = _module->funcIterBegin(); func != _module->funcIterEnd() ; func++){
+        mapCompiledFunction(&*func,(compileMethod(*func)));
     }
 }
 
+JittedFunction Compiler::getJittedCodeEntry(){
+    llvm::Function * entryFunction = _module->getMainFunction();
+    assert(entryFunction && "entryfunction not found");
+    return getCompiledFunctionEntry(entryFunction);
+}
+
 JittedFunction Compiler::compileMethod(llvm::Function &func){
-    MethodBuilder methodBuilder(&_typeDictionary, func);
+    MethodBuilder methodBuilder(&_typeDictionary, func, this);
     void * result = 0;
     methodBuilder.Compile(&result);
     return (JittedFunction) result;
+}
+
+void Compiler::mapCompiledFunction(llvm::Function * llvmFunc, JittedFunction entry){
+    _compiledFunctionMap[llvmFunc] = entry;
+}
+
+JittedFunction Compiler::getCompiledFunctionEntry(llvm::Function * func){
+    return _compiledFunctionMap[func];
 }
 
 

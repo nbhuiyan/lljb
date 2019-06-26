@@ -4,6 +4,8 @@
 #include "lljb/Module.hpp"
 #include "ilgen/TypeDictionary.hpp"
 
+#include "llvm/ADT/DenseMap.h"
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -18,13 +20,17 @@ public:
 
     void compile();
 
-    JittedFunction getFunction(int32_t index){ return _compiledFunctions[index]; }
+    JittedFunction getJittedCodeEntry();
+
+    void mapCompiledFunction(llvm::Function * llvmFunc, JittedFunction entry);
+
+    JittedFunction getCompiledFunctionEntry(llvm::Function * func);
 
 private:
     JittedFunction compileMethod(llvm::Function &func);
 
     TR::TypeDictionary _typeDictionary;
-    std::vector<JittedFunction> _compiledFunctions;
+    llvm::DenseMap<llvm::Function *, JittedFunction> _compiledFunctionMap;
     Module * _module;
 };
 
