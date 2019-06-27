@@ -31,6 +31,7 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     void visitICmpInst(llvm::ICmpInst &I);
     void visitBranchInst(llvm::BranchInst &I);
     void visitCallInst(llvm::CallInst &I);
+    void visitFPToSIInst(llvm::FPToSIInst &I);
 
     /**
      * Unimplemented visitors
@@ -52,7 +53,6 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     //void visitFPTruncInst(llvm::FPTruncInst &I);
     //void visitFPExtInst(llvm::FPExtInst &I);
     //void visitFPToUIInst(llvm::FPToUIInst &I);
-    //void visitFPToSIInst(llvm::FPToSIInst &I);
     //void visitUIToFPInst(llvm::UIToFPInst &I);
     //void visitSIToFPInst(llvm::SIToFPInst &I);
     //void visitPtrToIntInst(llvm::PtrToIntInst &I);
@@ -107,6 +107,7 @@ private:
      */
 
     TR::IlValue * createConstIntIlValue(llvm::Value * value);
+    TR::IlValue * createConstFPIlValue(llvm::Value * value);
     TR::IlValue * loadParameter(llvm::Value * value);
     TR::IlValue * getIlValue(llvm::Value * value);
 
