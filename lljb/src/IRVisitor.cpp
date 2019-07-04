@@ -51,7 +51,7 @@ void IRVisitor::visitStoreInst(llvm::StoreInst &I){
 
     _builder->StoreAt(
                 _builder->IndexAt(
-                    _td->pInt32,
+                    _td->PointerTo(_methodBuilder->getIlType(value->getType())),
                     _methodBuilder->getIlValue(dest),
                     _builder->ConstInt32(0)),
                 ilValue);
@@ -87,8 +87,8 @@ void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
     _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
-void IRVisitor::visitICmpInst(llvm::ICmpInst &I){
-    llvm::outs() << "icmp inst: " << I << "\n";
+void IRVisitor::visitCmpInst(llvm::CmpInst &I){
+    llvm::outs() << "cmp inst: " << I << "\n";
     TR::IlValue * lhs = getIlValue(I.getOperand(0));
     TR::IlValue * rhs = getIlValue(I.getOperand(1));
 
@@ -96,9 +96,13 @@ void IRVisitor::visitICmpInst(llvm::ICmpInst &I){
 
     switch (I.getPredicate()){
         case llvm::CmpInst::Predicate::ICMP_EQ:
+        case llvm::CmpInst::Predicate::FCMP_OEQ:
+        case llvm::CmpInst::Predicate::FCMP_UEQ:
             result = _builder->EqualTo(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_NE:
+        case llvm::CmpInst::Predicate::FCMP_ONE:
+        case llvm::CmpInst::Predicate::FCMP_UNE:
             result = _builder->NotEqualTo(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_UGT:
@@ -114,19 +118,27 @@ void IRVisitor::visitICmpInst(llvm::ICmpInst &I){
             result = _builder->UnsignedLessOrEqualTo(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_SGT:
+        case llvm::CmpInst::Predicate::FCMP_OGT:
+        case llvm::CmpInst::Predicate::FCMP_UGT:
             result = _builder->GreaterThan(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_SGE:
+        case llvm::CmpInst::Predicate::FCMP_OGE:
+        case llvm::CmpInst::Predicate::FCMP_UGE:
             result = _builder->GreaterOrEqualTo(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_SLT:
+        case llvm::CmpInst::Predicate::FCMP_OLT:
+        case llvm::CmpInst::Predicate::FCMP_ULT:
             result = _builder->LessThan(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_SLE:
+        case llvm::CmpInst::Predicate::FCMP_OLE:
+        case llvm::CmpInst::Predicate::FCMP_ULE:
             result = _builder->LessOrEqualTo(lhs, rhs);
             break;
         default:
-            assert(0 && "Unknown Icmp predicate");
+            assert(0 && "Unknown CmpInst predicate");
             break;
     }
     _methodBuilder->mapIRtoIlValue(&I, result);
@@ -173,6 +185,22 @@ void IRVisitor::visitCallInst(llvm::CallInst &I){
 
 void IRVisitor::visitFPToSIInst(llvm::FPToSIInst &I){
     llvm::outs() << "FP to SI inst: " << I << "\n";
+    TR::IlValue * srcVal = getIlValue(I.getOperand(0));
+    TR::IlType * toIlType = _methodBuilder->getIlType(I.getDestTy());
+    TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
+    _methodBuilder->mapIRtoIlValue(&I, result);
+}
+
+void IRVisitor::visitFPExtInst(llvm::FPExtInst &I){
+    llvm::outs() << "FP Ext inst: " << I << "\n";
+    TR::IlValue * srcVal = getIlValue(I.getOperand(0));
+    TR::IlType * toIlType = _methodBuilder->getIlType(I.getDestTy());
+    TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
+    _methodBuilder->mapIRtoIlValue(&I, result);
+}
+
+void IRVisitor::visitFPTruncInst(llvm::FPTruncInst &I){
+    llvm::outs() << "FP Trunc inst: " << I << "\n";
     TR::IlValue * srcVal = getIlValue(I.getOperand(0));
     TR::IlType * toIlType = _methodBuilder->getIlType(I.getDestTy());
     TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
@@ -258,6 +286,7 @@ TR::IlValue * IRVisitor::getIlValue(llvm::Value * value){
             break;
         case llvm::Value::ValueTy::BasicBlockVal:
             assert(0 && "Basicblock should not be looked up this way");
+            break;
 
         default:
             ilValue = _methodBuilder->getIlValue(value);
