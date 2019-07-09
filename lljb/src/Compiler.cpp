@@ -1,6 +1,8 @@
 #include "lljb/Compiler.hpp"
 #include "lljb/MethodBuilder.hpp"
 
+#include "llvm/IR/Function.h"
+
 namespace lljb{
 
 Compiler::Compiler(Module * module)
@@ -9,7 +11,8 @@ Compiler::Compiler(Module * module)
 
 void Compiler::compile(){
     for (auto func = _module->funcIterBegin(); func != _module->funcIterEnd() ; func++){
-        mapCompiledFunction(&*func,(compileMethod(*func)));
+        if (!(*func).isDeclaration())
+            mapCompiledFunction(&*func,(compileMethod(*func)));
     }
 }
 
