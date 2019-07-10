@@ -107,7 +107,10 @@ private:
 
     TR::IlValue * createConstIntIlValue(llvm::Value * value);
     TR::IlValue * createConstFPIlValue(llvm::Value * value);
+    TR::IlValue * createConstExprIlValue(llvm::Value * value);
+    TR::IlValue * createConstantDataArrayVal(llvm::Value * value);
     TR::IlValue * loadParameter(llvm::Value * value);
+    TR::IlValue * loadGlobal(llvm::Value * value);
     TR::IlValue * getIlValue(llvm::Value * value);
 
     /**

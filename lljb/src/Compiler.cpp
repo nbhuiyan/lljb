@@ -3,6 +3,8 @@
 
 #include "llvm/IR/Function.h"
 
+#include <cstdio>
+
 namespace lljb{
 
 Compiler::Compiler(Module * module)
@@ -18,23 +20,28 @@ void Compiler::compile(){
 
 JittedFunction Compiler::getJittedCodeEntry(){
     llvm::Function * entryFunction = _module->getMainFunction();
-    assert(entryFunction && "entryfunction not found");
-    return getCompiledFunctionEntry(entryFunction);
+    assert(entryFunction && "entry function not found");
+    return (JittedFunction) getFunctionAddress(entryFunction);
 }
 
-JittedFunction Compiler::compileMethod(llvm::Function &func){
+void * Compiler::compileMethod(llvm::Function &func){
     MethodBuilder methodBuilder(&_typeDictionary, func, this);
     void * result = 0;
     methodBuilder.Compile(&result);
-    return (JittedFunction) result;
+    return result;
 }
 
-void Compiler::mapCompiledFunction(llvm::Function * llvmFunc, JittedFunction entry){
+void Compiler::mapCompiledFunction(llvm::Function * llvmFunc, void * entry){
     _compiledFunctionMap[llvmFunc] = entry;
 }
 
-JittedFunction Compiler::getCompiledFunctionEntry(llvm::Function * func){
-    return _compiledFunctionMap[func];
+void * Compiler::getFunctionAddress(llvm::Function * func){
+    void * entry = _compiledFunctionMap[func];
+    if (!entry){ // temporary hack to call stdlib functions
+        if (func->getName().equals("printf")) entry = (void *) &printf; // c/cpp
+        else if (func->getName().equals("putc")) entry = (void *) &putc; // c/cpp
+    }
+    return entry;
 }
 
 

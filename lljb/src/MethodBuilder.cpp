@@ -59,6 +59,10 @@ TR::IlType * MethodBuilder::getIlType(llvm::Type * type){
         case llvm::Type::TypeID::DoubleTyID: // 64-bit floating point type
             ilType = typeDictionary()->Double;
             break;
+        case llvm::Type::TypeID::PointerTyID: // Pointers
+            ilType = typeDictionary()->PointerTo(getIlType(type->getPointerElementType()));
+            break;
+        case llvm::Type::TypeID::LabelTyID: // Label type
         case llvm::Type::TypeID::HalfTyID: // 16-bit floating point type
         case llvm::Type::TypeID::X86_FP80TyID: // 80-bit floating point type (X87)
         case llvm::Type::TypeID::FP128TyID: // 128-bit floating point type (112-bit mantissa)
@@ -68,9 +72,7 @@ TR::IlType * MethodBuilder::getIlType(llvm::Type * type){
         case llvm::Type::TypeID::FunctionTyID: // Functions
         case llvm::Type::TypeID::StructTyID: // Structures
         case llvm::Type::TypeID::ArrayTyID: // Arrays
-        case llvm::Type::TypeID::PointerTyID: // Pointers
         case llvm::Type::TypeID::VectorTyID: // SIMD "packed" format, or other vector types
-        case llvm::Type::TypeID::LabelTyID: // Label type
         case llvm::Type::TypeID::MetadataTyID: // Metadata type
         case llvm::Type::TypeID::VoidTyID: // type with no size
         default:
@@ -121,10 +123,11 @@ TR::BytecodeBuilder * MethodBuilder::getByteCodeBuilder(llvm::Value * value){
 }
 
 void MethodBuilder::defineFunction(llvm::Function * func){
+    if (_definedFunctions[func]) return;
     const char * name = func->getName().data();
     const char * fileName = func->getParent()->getSourceFileName().data();
     const char * lineNumer = "n/a";
-    void * entry = (void *)_compiler->getCompiledFunctionEntry(func);
+    void * entry = _compiler->getFunctionAddress(func);
     TR::IlType * returnType = getIlType(func->getReturnType());
     std::size_t  numArgs = func->arg_size();
     if (!numArgs){
@@ -150,6 +153,7 @@ void MethodBuilder::defineFunction(llvm::Function * func){
                         argTypes.data());
 
     }
+    _definedFunctions[func] = entry;
 }
 
 MethodBuilder::~MethodBuilder(){

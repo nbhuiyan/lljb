@@ -242,19 +242,42 @@ TR::IlValue * IRVisitor::loadParameter(llvm::Value * value){
     return ilValue;
 }
 
+TR::IlValue * IRVisitor::loadGlobal(llvm::Value * value){
+    TR::IlValue * ilValue = nullptr;
+    llvm::GlobalVariable * globalVar = llvm::dyn_cast<llvm::GlobalVariable>(value);
+    ilValue = getIlValue(globalVar->getInitializer());
+    return ilValue;
+}
+
+TR::IlValue * IRVisitor::createConstExprIlValue(llvm::Value * value){
+    TR::IlValue * ilValue = nullptr;
+    llvm::ConstantExpr * constExpr = llvm::dyn_cast<llvm::ConstantExpr>(value);
+    //if (constExpr->getNumOperands() > 1) assert (0 && "unhandled const expr");
+    ilValue = getIlValue(constExpr->getOperand(0));
+    return ilValue;
+}
+
+TR::IlValue * IRVisitor::createConstantDataArrayVal(llvm::Value * value){
+    TR::IlValue * ilValue = nullptr;
+    llvm::ConstantDataArray * constDataArray = llvm::dyn_cast<llvm::ConstantDataArray>(value);
+    ilValue = _builder->ConstString(constDataArray->getAsCString().data());
+    return ilValue;
+}
+
 TR::IlValue * IRVisitor::getIlValue(llvm::Value * value){
     TR::IlValue * ilValue = nullptr;
     switch (value->getValueID()){
         /* Constants */
-        case llvm::Value::ValueTy::FunctionVal:
-            assert("Function should not be accessed this way");
+        case llvm::Value::ValueTy::ConstantExprVal:
+            ilValue = createConstExprIlValue(value);
             break;
-
+        case llvm::Value::ValueTy::GlobalVariableVal:
+            ilValue = loadGlobal(value);
+            break;
+        case llvm::Value::ValueTy::FunctionVal:
         case llvm::Value::ValueTy::GlobalAliasVal:
         case llvm::Value::ValueTy::GlobalIFuncVal:
-        case llvm::Value::ValueTy::GlobalVariableVal:
         case llvm::Value::ValueTy::BlockAddressVal:
-        case llvm::Value::ValueTy::ConstantExprVal:
             assert(0 && "Unsupported constant value type");
             break;
 
@@ -265,8 +288,10 @@ TR::IlValue * IRVisitor::getIlValue(llvm::Value * value){
         case llvm::Value::ValueTy::ConstantFPVal:
             ilValue = createConstFPIlValue(value);
             break;
-        case llvm::Value::ValueTy::ConstantAggregateZeroVal:
         case llvm::Value::ValueTy::ConstantDataArrayVal:
+            ilValue = createConstantDataArrayVal(value);
+            break;
+        case llvm::Value::ValueTy::ConstantAggregateZeroVal:
         case llvm::Value::ValueTy::ConstantDataVectorVal:
         case llvm::Value::ValueTy::ConstantPointerNullVal:
         case llvm::Value::ValueTy::ConstantTokenNoneVal:

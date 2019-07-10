@@ -22,15 +22,15 @@ public:
 
     JittedFunction getJittedCodeEntry();
 
-    void mapCompiledFunction(llvm::Function * llvmFunc, JittedFunction entry);
+    void mapCompiledFunction(llvm::Function * llvmFunc, void * entry);
 
-    JittedFunction getCompiledFunctionEntry(llvm::Function * func);
+    void * getFunctionAddress(llvm::Function * func);
 
 private:
-    JittedFunction compileMethod(llvm::Function &func);
+    void * compileMethod(llvm::Function &func);
 
     TR::TypeDictionary _typeDictionary;
-    llvm::DenseMap<llvm::Function *, JittedFunction> _compiledFunctionMap;
+    llvm::DenseMap<llvm::Function *, void *> _compiledFunctionMap;
     Module * _module;
 };
 
