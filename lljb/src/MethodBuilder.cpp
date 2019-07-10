@@ -62,6 +62,9 @@ TR::IlType * MethodBuilder::getIlType(llvm::Type * type){
         case llvm::Type::TypeID::PointerTyID: // Pointers
             ilType = typeDictionary()->PointerTo(getIlType(type->getPointerElementType()));
             break;
+        case llvm::Type::TypeID::VoidTyID: // type with no size
+            ilType = typeDictionary()->NoType;
+            break;
         case llvm::Type::TypeID::LabelTyID: // Label type
         case llvm::Type::TypeID::HalfTyID: // 16-bit floating point type
         case llvm::Type::TypeID::X86_FP80TyID: // 80-bit floating point type (X87)
@@ -74,8 +77,8 @@ TR::IlType * MethodBuilder::getIlType(llvm::Type * type){
         case llvm::Type::TypeID::ArrayTyID: // Arrays
         case llvm::Type::TypeID::VectorTyID: // SIMD "packed" format, or other vector types
         case llvm::Type::TypeID::MetadataTyID: // Metadata type
-        case llvm::Type::TypeID::VoidTyID: // type with no size
         default:
+            llvm::outs() << "invalid type: " << *type << "\n";
             assert(0 && "Unsupported llvm type!");
             break;
     }

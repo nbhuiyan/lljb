@@ -15,9 +15,14 @@ void IRVisitor::visitInstruction(llvm::Instruction &I){
 
 void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
     llvm::outs() << "return inst: " << I << "\n";
-    llvm::Value * value = I.getOperand(0);
-    TR::IlValue * ilValue = getIlValue(value);
-    _builder->Return(ilValue);
+    if (!I.getNumOperands()){
+        _builder->Return();
+    }
+    else {
+        llvm::Value * value = I.getOperand(0);
+        TR::IlValue * ilValue = getIlValue(value);
+        _builder->Return(ilValue);
+    }
 }
 
 void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
