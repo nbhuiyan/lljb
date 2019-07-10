@@ -20,25 +20,47 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
      *
      ************************************************************************/
 
-    /**
+    /************************************************************************
      * Implemented visitors
-     */
+     ************************************************************************/
     void visitReturnInst(llvm::ReturnInst &I);
     void visitAllocaInst(llvm::AllocaInst &I);
     void visitLoadInst(llvm::LoadInst     &I);
     void visitStoreInst(llvm::StoreInst   &I);
     void visitBinaryOperator(llvm::BinaryOperator &I);
-    void visitCmpInst(llvm::CmpInst &I); // handles both llvm::ICmpInst and llvm::FCmpInst
-    void visitBranchInst(llvm::BranchInst &I);
-    void visitCallInst(llvm::CallInst &I);
-    void visitFPToSIInst(llvm::FPToSIInst &I);
-    void visitFPExtInst(llvm::FPExtInst &I);
-    void visitFPTruncInst(llvm::FPTruncInst &I);
-
 
     /**
-     * Unimplemented visitors
+     * visitCmpInst handles the following instructions:
+     * llvm::ICmpInst
+     * llvm::FCmpInst
      */
+    void visitCmpInst(llvm::CmpInst &I); // handles both llvm::ICmpInst and llvm::FCmpInst
+
+    void visitBranchInst(llvm::BranchInst &I);
+    void visitCallInst(llvm::CallInst &I);
+
+    /**
+     * visitCastInst handles the following instructions:
+     * llvm::AddrSpaceCastInst
+     * llvm::BitCastInst
+     * llvm::FPExtInst
+     * llvm::FPToSIInst
+     * llvm::FPToUIInst
+     * llvm::FPTruncInst
+     * llvm::IntToPtrInst
+     * llvm::PtrToIntInst
+     * llvm::SExtInst
+     * llvm::SIToFPInst
+     * llvm::TruncInst
+     * llvm::UIToFPInst
+     * llvm::ZExtInst
+     */
+    void visitCastInst(llvm::CastInst &I);
+
+
+    /************************************************************************
+     * Unimplemented visitors
+     ************************************************************************/
 
     /* Handles cases of visiting an unimplemented instruction */
     void visitInstruction(llvm::Instruction &I);
@@ -49,16 +71,6 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     //void visitFenceInst(llvm::FenceInst   &I);
     //void visitGetElementPtrInst(llvm::GetElementPtrInst &I);
     //void visitPHINode(llvm::PHINode       &I);
-    //void visitTruncInst(llvm::TruncInst &I);
-    //void visitZExtInst(llvm::ZExtInst &I);
-    //void visitSExtInst(llvm::SExtInst &I);
-    //void visitFPToUIInst(llvm::FPToUIInst &I);
-    //void visitUIToFPInst(llvm::UIToFPInst &I);
-    //void visitSIToFPInst(llvm::SIToFPInst &I);
-    //void visitPtrToIntInst(llvm::PtrToIntInst &I);
-    //void visitIntToPtrInst(llvm::IntToPtrInst &I);
-    //void visitBitCastInst(llvm::BitCastInst &I);
-    //void visitAddrSpaceCastInst(llvm::AddrSpaceCastInst &I);
     //void visitSelectInst(llvm::SelectInst &I);
     //void visitVAArgInst(llvm::VAArgInst   &I);
     //void visitExtractElementInst(llvm::ExtractElementInst &I);
@@ -93,7 +105,6 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     //void visitCatchReturnInst(llvm::CatchReturnInst &I);
     //void visitCatchSwitchInst(llvm::CatchSwitchInst &I);
     //void visitTerminator(llvm::Instruction &I);
-    //void visitCastInst(llvm::CastInst &I);
     //void visitUnaryInstruction(llvm::UnaryInstruction &I);
     //void visitCallBase(llvm::CallBase &I);
     //void visitCallSite(llvm::CallSite CS);

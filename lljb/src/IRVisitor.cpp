@@ -183,24 +183,8 @@ void IRVisitor::visitCallInst(llvm::CallInst &I){
     _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
-void IRVisitor::visitFPToSIInst(llvm::FPToSIInst &I){
-    llvm::outs() << "FP to SI inst: " << I << "\n";
-    TR::IlValue * srcVal = getIlValue(I.getOperand(0));
-    TR::IlType * toIlType = _methodBuilder->getIlType(I.getDestTy());
-    TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
-    _methodBuilder->mapIRtoIlValue(&I, result);
-}
-
-void IRVisitor::visitFPExtInst(llvm::FPExtInst &I){
-    llvm::outs() << "FP Ext inst: " << I << "\n";
-    TR::IlValue * srcVal = getIlValue(I.getOperand(0));
-    TR::IlType * toIlType = _methodBuilder->getIlType(I.getDestTy());
-    TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
-    _methodBuilder->mapIRtoIlValue(&I, result);
-}
-
-void IRVisitor::visitFPTruncInst(llvm::FPTruncInst &I){
-    llvm::outs() << "FP Trunc inst: " << I << "\n";
+void IRVisitor::visitCastInst(llvm::CastInst &I){
+    llvm::outs() << "Cast inst: " << I << "\n";
     TR::IlValue * srcVal = getIlValue(I.getOperand(0));
     TR::IlType * toIlType = _methodBuilder->getIlType(I.getDestTy());
     TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
