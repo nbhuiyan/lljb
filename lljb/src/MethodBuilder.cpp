@@ -19,7 +19,7 @@ MethodBuilder::MethodBuilder(TR::TypeDictionary *td, llvm::Function &func, Compi
     DefineLine("n/a"); // line numer is only available if the bitcode file was
                        // generated with debug info, hence not dealing with that
     DefineName(func.getName().data());
-    DefineReturnType(getIlType(func.getReturnType()));
+    DefineReturnType(getIlType(td,func.getReturnType()));
     setUseBytecodeBuilders();
     defineParameters();
 }
@@ -43,27 +43,31 @@ bool MethodBuilder::buildIL(){
     return true;
 }
 
-TR::IlType * MethodBuilder::getIlType(llvm::Type * type){
+// todo: this will eventually live in lljb's own TypeDictionary
+TR::IlType * MethodBuilder::getIlType(TR::TypeDictionary * td, llvm::Type * type){
     TR::IlType * ilType = nullptr;
     switch (type->getTypeID()){
         case llvm::Type::TypeID::IntegerTyID: // arbitrary bitwidth integers
-            if (type->isIntegerTy(8)) ilType = typeDictionary()->Int8;
-            else if (type->isIntegerTy(16)) ilType = typeDictionary()->Int16;
-            else if (type->isIntegerTy(32)) ilType = typeDictionary()->Int32;
-            else if (type->isIntegerTy(64)) ilType = typeDictionary()->Int64;
+            if (type->isIntegerTy(8)) ilType = td->Int8;
+            else if (type->isIntegerTy(16)) ilType = td->Int16;
+            else if (type->isIntegerTy(32)) ilType = td->Int32;
+            else if (type->isIntegerTy(64)) ilType = td->Int64;
             else assert(0 && "Unsupported integer type");
             break;
         case llvm::Type::TypeID::FloatTyID: // 32-bit floating point type
-            ilType = typeDictionary()->Float;
+            ilType = td->Float;
             break;
         case llvm::Type::TypeID::DoubleTyID: // 64-bit floating point type
-            ilType = typeDictionary()->Double;
+            ilType = td->Double;
             break;
         case llvm::Type::TypeID::PointerTyID: // Pointers
-            ilType = typeDictionary()->PointerTo(getIlType(type->getPointerElementType()));
+            ilType = td->PointerTo(getIlType(td,type->getPointerElementType()));
             break;
         case llvm::Type::TypeID::VoidTyID: // type with no size
-            ilType = typeDictionary()->NoType;
+            ilType = td->NoType;
+            break;
+        case llvm::Type::TypeID::StructTyID: // Structures
+            ilType = td->LookupStruct(type->getStructName().data());
             break;
         case llvm::Type::TypeID::LabelTyID: // Label type
         case llvm::Type::TypeID::HalfTyID: // 16-bit floating point type
@@ -73,7 +77,6 @@ TR::IlType * MethodBuilder::getIlType(llvm::Type * type){
         case llvm::Type::TypeID::X86_MMXTyID: // 64-bit MMX vectors -- X86
         case llvm::Type::TypeID::TokenTyID: // Tokens
         case llvm::Type::TypeID::FunctionTyID: // Functions
-        case llvm::Type::TypeID::StructTyID: // Structures
         case llvm::Type::TypeID::ArrayTyID: // Arrays
         case llvm::Type::TypeID::VectorTyID: // SIMD "packed" format, or other vector types
         case llvm::Type::TypeID::MetadataTyID: // Metadata type
@@ -97,7 +100,7 @@ void MethodBuilder::assignBuildersToBasicBlocks(){
 
 void MethodBuilder::defineParameters(){
     for (auto arg = _function.arg_begin(); arg != _function.arg_end(); ++arg){
-        DefineParameter(stringifyParamIndex(arg->getArgNo()), getIlType(arg->getType()));
+        DefineParameter(stringifyParamIndex(arg->getArgNo()), getIlType(typeDictionary(),arg->getType()));
     }
 }
 
@@ -111,6 +114,10 @@ char * MethodBuilder::stringifyParamIndex(unsigned paramIndex){
 
 char * MethodBuilder::getParamNameFromIndex(unsigned index){
     return _parameterMap[index];
+}
+
+char * MethodBuilder::getMemberNameFromIndex(unsigned index){
+    return _compiler->getObjectMemberNameFromIndex(index);
 }
 
 TR::IlValue * MethodBuilder::getIlValue(llvm::Value * value){
@@ -131,7 +138,7 @@ void MethodBuilder::defineFunction(llvm::Function * func){
     const char * fileName = func->getParent()->getSourceFileName().data();
     const char * lineNumer = "n/a";
     void * entry = _compiler->getFunctionAddress(func);
-    TR::IlType * returnType = getIlType(func->getReturnType());
+    TR::IlType * returnType = getIlType(typeDictionary(),func->getReturnType());
     std::size_t  numArgs = func->arg_size();
     if (!numArgs){
         DefineFunction(name,
@@ -144,7 +151,7 @@ void MethodBuilder::defineFunction(llvm::Function * func){
     else {
         std::vector<TR::IlType *> argTypes;
         for (auto arg = func->arg_begin(); arg != func->arg_end(); ++arg){
-            argTypes.push_back(getIlType(arg->getType()));
+            argTypes.push_back(getIlType(typeDictionary(),arg->getType()));
         }
 
         DefineFunction(name,

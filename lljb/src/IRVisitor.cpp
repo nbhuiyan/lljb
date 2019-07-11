@@ -26,11 +26,17 @@ void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
 }
 
 void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
-    llvm::outs() << "alloca inst: " << I << "\n";
-    TR::IlValue * ilValue =
-    _builder->CreateLocalArray(
+    llvm::outs() << "alloca inst: " << I << " allocated type: " << *I.getAllocatedType() << "\n";
+    TR::IlValue * ilValue = nullptr;
+    if (I.getAllocatedType()->isStructTy()){
+        ilValue = _builder->CreateLocalStruct(_methodBuilder->getIlType(_td,I.getAllocatedType()));
+    }
+    else{
+    ilValue =
+        _builder->CreateLocalArray(
                             1,
-                            _methodBuilder->getIlType(I.getAllocatedType()));
+                            _methodBuilder->getIlType(_td,I.getAllocatedType()));
+    }
     _methodBuilder->mapIRtoIlValue(&I, ilValue);
 }
 
@@ -38,14 +44,14 @@ void IRVisitor::visitLoadInst(llvm::LoadInst &I){
     llvm::outs() << "load inst: " << I << "\n";
     llvm::Value * source = I.getPointerOperand();
     TR::IlValue * ilSrc = getIlValue(source);
-    TR::IlValue * ilDest = _builder->LoadAt(
-                                _td->PointerTo(_methodBuilder->getIlType(I.getType())),
+    TR::IlValue * loadedVal = _builder->LoadAt(
+                                _td->PointerTo(_methodBuilder->getIlType(_td,I.getType())),
                                 _builder->
                                 IndexAt(
-                                    _td->PointerTo(_methodBuilder->getIlType(I.getType())),
+                                    _td->PointerTo(_methodBuilder->getIlType(_td,I.getType())),
                                     ilSrc,
                                     _builder->ConstInt32(0)));
-    _methodBuilder->mapIRtoIlValue(&I, ilDest);
+    _methodBuilder->mapIRtoIlValue(&I, loadedVal);
 }
 
 void IRVisitor::visitStoreInst(llvm::StoreInst &I){
@@ -56,7 +62,7 @@ void IRVisitor::visitStoreInst(llvm::StoreInst &I){
 
     _builder->StoreAt(
                 _builder->IndexAt(
-                    _td->PointerTo(_methodBuilder->getIlType(value->getType())),
+                    _td->PointerTo(_methodBuilder->getIlType(_td,value->getType())),
                     _methodBuilder->getIlValue(dest),
                     _builder->ConstInt32(0)),
                 ilValue);
@@ -191,9 +197,19 @@ void IRVisitor::visitCallInst(llvm::CallInst &I){
 void IRVisitor::visitCastInst(llvm::CastInst &I){
     llvm::outs() << "Cast inst: " << I << "\n";
     TR::IlValue * srcVal = getIlValue(I.getOperand(0));
-    TR::IlType * toIlType = _methodBuilder->getIlType(I.getDestTy());
+    TR::IlType * toIlType = _methodBuilder->getIlType(_td,I.getDestTy());
     TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
     _methodBuilder->mapIRtoIlValue(&I, result);
+}
+
+void IRVisitor::visitGetElementPtrInst(llvm::GetElementPtrInst &I){
+    llvm::outs() << "getElementPtrInst: " << I << "\n";
+    llvm::ConstantInt * indextConstantInt = llvm::dyn_cast<llvm::ConstantInt>(I.getOperand(2));
+    unsigned elementIndex = indextConstantInt->getZExtValue();
+    TR::IlValue * ilValue = _builder->StructFieldInstanceAddress(I.getSourceElementType()->getStructName().data(),
+                                                                _methodBuilder->getMemberNameFromIndex(elementIndex),
+                                                                getIlValue(I.getOperand(0)));
+    _methodBuilder->mapIRtoIlValue(&I, ilValue);
 }
 
 TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
@@ -288,8 +304,9 @@ TR::IlValue * IRVisitor::getIlValue(llvm::Value * value){
             break;
 
         /* Constant aggregate value types */
-        case llvm::Value::ValueTy::ConstantArrayVal:
         case llvm::Value::ValueTy::ConstantStructVal:
+            //break; //todo uncomment when done implementing
+        case llvm::Value::ValueTy::ConstantArrayVal:
         case llvm::Value::ValueTy::ConstantVectorVal:
             assert(0 && "Unsupported constant aggregate value type");
             break;

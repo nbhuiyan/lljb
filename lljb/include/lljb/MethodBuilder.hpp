@@ -32,13 +32,16 @@ class MethodBuilder : public TR::MethodBuilder {
 public:
     MethodBuilder(TR::TypeDictionary *td, llvm::Function &func, Compiler * compiler);
     ~MethodBuilder();
-    TR::IlType * getIlType(llvm::Type * type);
+
+    static TR::IlType * getIlType(TR::TypeDictionary * td,llvm::Type * type);
+
     virtual bool buildIL() override;
     TR::IlValue * getIlValue(llvm::Value * value);
     char * getParamNameFromIndex(unsigned index);
     void mapIRtoIlValue(llvm::Value * irValue, TR::IlValue * ilValue);
     TR::BytecodeBuilder * getByteCodeBuilder(llvm::Value * value);
     void defineFunction(llvm::Function * func);
+    char * getMemberNameFromIndex(unsigned index);
 
 private:
     void assignBuildersToBasicBlocks();
