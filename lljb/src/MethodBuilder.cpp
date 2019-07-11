@@ -44,14 +44,45 @@ bool MethodBuilder::buildIL(){
 }
 
 TR::IlType * MethodBuilder::getIlType(llvm::Type * type){
-    if (type->isIntegerTy()){
-        if (type->isIntegerTy(8)) return typeDictionary()->Int8;
-        else if (type->isIntegerTy(16)) return typeDictionary()->Int16;
-        else if (type->isIntegerTy(32)) return typeDictionary()->Int32;
-        else if (type->isIntegerTy(64)) return typeDictionary()->Int64;
-        else assert(0 && "Unsupported integer type");
+    TR::IlType * ilType = nullptr;
+    switch (type->getTypeID()){
+        case llvm::Type::TypeID::IntegerTyID: // arbitrary bitwidth integers
+            if (type->isIntegerTy(8)) ilType = typeDictionary()->Int8;
+            else if (type->isIntegerTy(16)) ilType = typeDictionary()->Int16;
+            else if (type->isIntegerTy(32)) ilType = typeDictionary()->Int32;
+            else if (type->isIntegerTy(64)) ilType = typeDictionary()->Int64;
+            else assert(0 && "Unsupported integer type");
+            break;
+        case llvm::Type::TypeID::FloatTyID: // 32-bit floating point type
+            ilType = typeDictionary()->Float;
+            break;
+        case llvm::Type::TypeID::DoubleTyID: // 64-bit floating point type
+            ilType = typeDictionary()->Double;
+            break;
+        case llvm::Type::TypeID::PointerTyID: // Pointers
+            ilType = typeDictionary()->PointerTo(getIlType(type->getPointerElementType()));
+            break;
+        case llvm::Type::TypeID::VoidTyID: // type with no size
+            ilType = typeDictionary()->NoType;
+            break;
+        case llvm::Type::TypeID::LabelTyID: // Label type
+        case llvm::Type::TypeID::HalfTyID: // 16-bit floating point type
+        case llvm::Type::TypeID::X86_FP80TyID: // 80-bit floating point type (X87)
+        case llvm::Type::TypeID::FP128TyID: // 128-bit floating point type (112-bit mantissa)
+        case llvm::Type::TypeID::PPC_FP128TyID: // 128-bit floating point type (2 64-bits) -- PPC
+        case llvm::Type::TypeID::X86_MMXTyID: // 64-bit MMX vectors -- X86
+        case llvm::Type::TypeID::TokenTyID: // Tokens
+        case llvm::Type::TypeID::FunctionTyID: // Functions
+        case llvm::Type::TypeID::StructTyID: // Structures
+        case llvm::Type::TypeID::ArrayTyID: // Arrays
+        case llvm::Type::TypeID::VectorTyID: // SIMD "packed" format, or other vector types
+        case llvm::Type::TypeID::MetadataTyID: // Metadata type
+        default:
+            llvm::outs() << "invalid type: " << *type << "\n";
+            assert(0 && "Unsupported llvm type!");
+            break;
     }
-    else assert (0 && "Unsupported type");
+    return ilType;
 }
 
 void MethodBuilder::assignBuildersToBasicBlocks(){
@@ -95,10 +126,11 @@ TR::BytecodeBuilder * MethodBuilder::getByteCodeBuilder(llvm::Value * value){
 }
 
 void MethodBuilder::defineFunction(llvm::Function * func){
+    if (_definedFunctions[func]) return;
     const char * name = func->getName().data();
     const char * fileName = func->getParent()->getSourceFileName().data();
     const char * lineNumer = "n/a";
-    void * entry = (void *)_compiler->getCompiledFunctionEntry(func);
+    void * entry = _compiler->getFunctionAddress(func);
     TR::IlType * returnType = getIlType(func->getReturnType());
     std::size_t  numArgs = func->arg_size();
     if (!numArgs){
@@ -124,6 +156,7 @@ void MethodBuilder::defineFunction(llvm::Function * func){
                         argTypes.data());
 
     }
+    _definedFunctions[func] = entry;
 }
 
 MethodBuilder::~MethodBuilder(){

@@ -58,6 +58,7 @@ private:
     llvm::DenseMap<llvm::Value *, TR::BytecodeBuilder * > _BBToBuilderMap;
     llvm::DenseMap<llvm::Value *, TR::IlValue *> _valueMap;
     llvm::DenseMap<unsigned, char *> _parameterMap;
+    llvm::DenseMap<llvm::Function *, void *> _definedFunctions;
     Compiler * _compiler;
 
 }; /* class MethodBuilder */

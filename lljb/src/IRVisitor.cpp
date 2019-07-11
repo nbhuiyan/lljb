@@ -15,14 +15,22 @@ void IRVisitor::visitInstruction(llvm::Instruction &I){
 
 void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
     llvm::outs() << "return inst: " << I << "\n";
-    llvm::Value * value = I.getOperand(0);
-    TR::IlValue * ilValue = getIlValue(value);
-    _builder->Return(ilValue);
+    if (!I.getNumOperands()){
+        _builder->Return();
+    }
+    else {
+        llvm::Value * value = I.getOperand(0);
+        TR::IlValue * ilValue = getIlValue(value);
+        _builder->Return(ilValue);
+    }
 }
 
 void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
     llvm::outs() << "alloca inst: " << I << "\n";
-    TR::IlValue * ilValue = _builder->CreateLocalArray(1,_td->Int32);
+    TR::IlValue * ilValue =
+    _builder->CreateLocalArray(
+                            1,
+                            _methodBuilder->getIlType(I.getAllocatedType()));
     _methodBuilder->mapIRtoIlValue(&I, ilValue);
 }
 
@@ -31,10 +39,10 @@ void IRVisitor::visitLoadInst(llvm::LoadInst &I){
     llvm::Value * source = I.getPointerOperand();
     TR::IlValue * ilSrc = getIlValue(source);
     TR::IlValue * ilDest = _builder->LoadAt(
-                                _td->pInt32,
+                                _td->PointerTo(_methodBuilder->getIlType(I.getType())),
                                 _builder->
                                 IndexAt(
-                                    _td->pInt32,
+                                    _td->PointerTo(_methodBuilder->getIlType(I.getType())),
                                     ilSrc,
                                     _builder->ConstInt32(0)));
     _methodBuilder->mapIRtoIlValue(&I, ilDest);
@@ -48,7 +56,7 @@ void IRVisitor::visitStoreInst(llvm::StoreInst &I){
 
     _builder->StoreAt(
                 _builder->IndexAt(
-                    _td->pInt32,
+                    _td->PointerTo(_methodBuilder->getIlType(value->getType())),
                     _methodBuilder->getIlValue(dest),
                     _builder->ConstInt32(0)),
                 ilValue);
@@ -61,15 +69,20 @@ void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
     TR::IlValue * result = nullptr;
     switch (I.getOpcode()){
         case llvm::BinaryOperator::Add:
+        case llvm::BinaryOperator::FAdd:
             result = _builder->Add(lhs,rhs);
             break;
         case llvm::BinaryOperator::Sub:
+        case llvm::BinaryOperator::FSub:
             result = _builder->Sub(lhs, rhs);
             break;
         case llvm::BinaryOperator::Mul:
+        case llvm::BinaryOperator::FMul:
             result = _builder->Mul(lhs, rhs);
             break;
         case llvm::BinaryOperator::SDiv:
+        case llvm::BinaryOperator::FDiv:
+        case llvm::BinaryOperator::UDiv:
             result = _builder->Div(lhs, rhs);
             break;
         default:
@@ -79,8 +92,8 @@ void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
     _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
-void IRVisitor::visitICmpInst(llvm::ICmpInst &I){
-    llvm::outs() << "icmp inst: " << I << "\n";
+void IRVisitor::visitCmpInst(llvm::CmpInst &I){
+    llvm::outs() << "cmp inst: " << I << "\n";
     TR::IlValue * lhs = getIlValue(I.getOperand(0));
     TR::IlValue * rhs = getIlValue(I.getOperand(1));
 
@@ -88,9 +101,13 @@ void IRVisitor::visitICmpInst(llvm::ICmpInst &I){
 
     switch (I.getPredicate()){
         case llvm::CmpInst::Predicate::ICMP_EQ:
+        case llvm::CmpInst::Predicate::FCMP_OEQ:
+        case llvm::CmpInst::Predicate::FCMP_UEQ:
             result = _builder->EqualTo(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_NE:
+        case llvm::CmpInst::Predicate::FCMP_ONE:
+        case llvm::CmpInst::Predicate::FCMP_UNE:
             result = _builder->NotEqualTo(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_UGT:
@@ -106,19 +123,27 @@ void IRVisitor::visitICmpInst(llvm::ICmpInst &I){
             result = _builder->UnsignedLessOrEqualTo(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_SGT:
+        case llvm::CmpInst::Predicate::FCMP_OGT:
+        case llvm::CmpInst::Predicate::FCMP_UGT:
             result = _builder->GreaterThan(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_SGE:
+        case llvm::CmpInst::Predicate::FCMP_OGE:
+        case llvm::CmpInst::Predicate::FCMP_UGE:
             result = _builder->GreaterOrEqualTo(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_SLT:
+        case llvm::CmpInst::Predicate::FCMP_OLT:
+        case llvm::CmpInst::Predicate::FCMP_ULT:
             result = _builder->LessThan(lhs, rhs);
             break;
         case llvm::CmpInst::Predicate::ICMP_SLE:
+        case llvm::CmpInst::Predicate::FCMP_OLE:
+        case llvm::CmpInst::Predicate::FCMP_ULE:
             result = _builder->LessOrEqualTo(lhs, rhs);
             break;
         default:
-            assert(0 && "Unknown Icmp predicate");
+            assert(0 && "Unknown CmpInst predicate");
             break;
     }
     _methodBuilder->mapIRtoIlValue(&I, result);
@@ -163,6 +188,14 @@ void IRVisitor::visitCallInst(llvm::CallInst &I){
     _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
+void IRVisitor::visitCastInst(llvm::CastInst &I){
+    llvm::outs() << "Cast inst: " << I << "\n";
+    TR::IlValue * srcVal = getIlValue(I.getOperand(0));
+    TR::IlType * toIlType = _methodBuilder->getIlType(I.getDestTy());
+    TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
+    _methodBuilder->mapIRtoIlValue(&I, result);
+}
+
 TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
     TR::IlValue * ilValue = nullptr;
     llvm::ConstantInt * constInt = llvm::dyn_cast<llvm::ConstantInt>(value);
@@ -175,6 +208,22 @@ TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
     return ilValue;
 }
 
+TR::IlValue * IRVisitor::createConstFPIlValue(llvm::Value * value){
+    TR::IlValue * ilValue = nullptr;
+    llvm::ConstantFP * constFP = llvm::dyn_cast<llvm::ConstantFP>(value);
+    llvm::APFloat apf = constFP->getValueAPF();
+    if (apf.getSizeInBits(apf.getSemantics()) <= 32){
+        float rawValue = apf.convertToFloat();
+        ilValue = _builder->ConstFloat(rawValue);
+    }
+    else {
+        double rawValue = apf.convertToDouble();
+        ilValue = _builder->ConstDouble(rawValue);
+    }
+
+    return ilValue;
+}
+
 TR::IlValue * IRVisitor::loadParameter(llvm::Value * value){
     TR::IlValue * ilValue = nullptr;
     llvm::Argument * arg = llvm::dyn_cast<llvm::Argument>(value);
@@ -182,15 +231,77 @@ TR::IlValue * IRVisitor::loadParameter(llvm::Value * value){
     return ilValue;
 }
 
+TR::IlValue * IRVisitor::loadGlobal(llvm::Value * value){
+    TR::IlValue * ilValue = nullptr;
+    llvm::GlobalVariable * globalVar = llvm::dyn_cast<llvm::GlobalVariable>(value);
+    ilValue = getIlValue(globalVar->getInitializer());
+    return ilValue;
+}
+
+TR::IlValue * IRVisitor::createConstExprIlValue(llvm::Value * value){
+    TR::IlValue * ilValue = nullptr;
+    llvm::ConstantExpr * constExpr = llvm::dyn_cast<llvm::ConstantExpr>(value);
+    //if (constExpr->getNumOperands() > 1) assert (0 && "unhandled const expr");
+    ilValue = getIlValue(constExpr->getOperand(0));
+    return ilValue;
+}
+
+TR::IlValue * IRVisitor::createConstantDataArrayVal(llvm::Value * value){
+    TR::IlValue * ilValue = nullptr;
+    llvm::ConstantDataArray * constDataArray = llvm::dyn_cast<llvm::ConstantDataArray>(value);
+    ilValue = _builder->ConstString(constDataArray->getAsCString().data());
+    return ilValue;
+}
+
 TR::IlValue * IRVisitor::getIlValue(llvm::Value * value){
     TR::IlValue * ilValue = nullptr;
     switch (value->getValueID()){
+        /* Constants */
+        case llvm::Value::ValueTy::ConstantExprVal:
+            ilValue = createConstExprIlValue(value);
+            break;
+        case llvm::Value::ValueTy::GlobalVariableVal:
+            ilValue = loadGlobal(value);
+            break;
+        case llvm::Value::ValueTy::FunctionVal:
+        case llvm::Value::ValueTy::GlobalAliasVal:
+        case llvm::Value::ValueTy::GlobalIFuncVal:
+        case llvm::Value::ValueTy::BlockAddressVal:
+            assert(0 && "Unsupported constant value type");
+            break;
+
+        /* Constant data value types */
         case llvm::Value::ValueTy::ConstantIntVal:
             ilValue = createConstIntIlValue(value);
             break;
+        case llvm::Value::ValueTy::ConstantFPVal:
+            ilValue = createConstFPIlValue(value);
+            break;
+        case llvm::Value::ValueTy::ConstantDataArrayVal:
+            ilValue = createConstantDataArrayVal(value);
+            break;
+        case llvm::Value::ValueTy::ConstantAggregateZeroVal:
+        case llvm::Value::ValueTy::ConstantDataVectorVal:
+        case llvm::Value::ValueTy::ConstantPointerNullVal:
+        case llvm::Value::ValueTy::ConstantTokenNoneVal:
+            assert(0 && "Unsupported constant data value type");
+            break;
+
+        /* Constant aggregate value types */
+        case llvm::Value::ValueTy::ConstantArrayVal:
+        case llvm::Value::ValueTy::ConstantStructVal:
+        case llvm::Value::ValueTy::ConstantVectorVal:
+            assert(0 && "Unsupported constant aggregate value type");
+            break;
+
+        /* Other value types */
         case llvm::Value::ValueTy::ArgumentVal:
             ilValue = loadParameter(value);
             break;
+        case llvm::Value::ValueTy::BasicBlockVal:
+            assert(0 && "Basicblock should not be looked up this way");
+            break;
+
         default:
             ilValue = _methodBuilder->getIlValue(value);
             break;
