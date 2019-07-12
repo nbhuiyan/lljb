@@ -31,6 +31,11 @@ void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
     if (I.getAllocatedType()->isStructTy()){
         ilValue = _builder->CreateLocalStruct(_methodBuilder->getIlType(_td,I.getAllocatedType()));
     }
+    else if (I.getAllocatedType()->isArrayTy()){
+        ilValue = _builder->CreateLocalArray(
+                            I.getAllocatedType()->getArrayNumElements(),
+                            _methodBuilder->getIlType(_td,I.getAllocatedType()->getArrayElementType()));
+    }
     else{
     ilValue =
         _builder->CreateLocalArray(
@@ -204,11 +209,26 @@ void IRVisitor::visitCastInst(llvm::CastInst &I){
 
 void IRVisitor::visitGetElementPtrInst(llvm::GetElementPtrInst &I){
     llvm::outs() << "getElementPtrInst: " << I << "\n";
-    llvm::ConstantInt * indextConstantInt = llvm::dyn_cast<llvm::ConstantInt>(I.getOperand(2));
-    unsigned elementIndex = indextConstantInt->getZExtValue();
-    TR::IlValue * ilValue = _builder->StructFieldInstanceAddress(I.getSourceElementType()->getStructName().data(),
+    TR::IlValue * ilValue = nullptr;
+    if (I.getSourceElementType()->isStructTy()){
+        llvm::ConstantInt * indextConstantInt = llvm::dyn_cast<llvm::ConstantInt>(I.getOperand(2));
+        unsigned elementIndex = indextConstantInt->getZExtValue();
+        ilValue = _builder->StructFieldInstanceAddress(I.getSourceElementType()->getStructName().data(),
                                                                 _methodBuilder->getMemberNameFromIndex(elementIndex),
                                                                 getIlValue(I.getOperand(0)));
+    }
+    else if (I.getSourceElementType()->isArrayTy()){
+        ilValue =
+            _builder->IndexAt(
+                _td->PointerTo(
+                    _methodBuilder->getIlType(_td,I.getSourceElementType()->getArrayElementType())),
+                getIlValue(I.getOperand(0)),
+                getIlValue(I.getOperand(2)));
+    }
+    else {
+        assert(0 && "unknown source type for getElementPtr Instruction");
+    }
+
     _methodBuilder->mapIRtoIlValue(&I, ilValue);
 }
 
