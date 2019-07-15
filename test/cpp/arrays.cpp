@@ -1,6 +1,12 @@
+void foo(int * x){
+    x[3] = 2;
+}
+
 int main(){
-    int table[2];
-    table[0] = 1;
-    table[1] = 2;
-    return table[0] + table[1];
+    int table1[2];
+    int table2[2][2];
+    table1[0] = 1;
+    foo((int *)table2);
+    int z = table1[0] + table2[1][1];
+    return z;
 }

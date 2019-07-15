@@ -32,10 +32,10 @@ void print_image(int x_pixels, int y_pixels, int* table) {
     for (int py = 0; py < y_pixels; ++py) {
        for (int px = 0; px < x_pixels; ++px) {
            char c = table[py*x_pixels + px] > 150 ? '*' : ' ';
-           printf("%s",&c);
+           printf("%c",c);
        }
        char c = '\n';
-       printf("%s", &c);
+       printf("%c", c);
     }
 }
 
@@ -52,11 +52,11 @@ struct timespec tdiff(struct timespec * start, struct timespec * end) {
 }
 
 int main(void) {
-    int small_table [3][4] = {0};
+    int small_table [3][4];
     mandelbrot(4, 3, (int*)small_table, 10);
     print_image(4, 3, (int*)small_table);
 
-    int table[34][80] = {0};
+    int table[34][80];
     clockid_t clockid = CLOCK_MONOTONIC;
 
     struct timespec start_time, end_time;

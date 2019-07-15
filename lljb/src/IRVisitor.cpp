@@ -32,9 +32,21 @@ void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
         ilValue = _builder->CreateLocalStruct(_methodBuilder->getIlType(_td,I.getAllocatedType()));
     }
     else if (I.getAllocatedType()->isArrayTy()){
+        llvm::Type * type = I.getAllocatedType();
+        unsigned numElements = type->getArrayNumElements();
+        type = type->getArrayElementType();
+        while (1){
+            if (type->isArrayTy()){
+                numElements *= type->getArrayNumElements();
+                type = type->getArrayElementType();
+            }
+            else {
+                break;
+            }
+        }
         ilValue = _builder->CreateLocalArray(
-                            I.getAllocatedType()->getArrayNumElements(),
-                            _methodBuilder->getIlType(_td,I.getAllocatedType()->getArrayElementType()));
+                            numElements,
+                            _methodBuilder->getIlType(_td,type));
     }
     else{
     ilValue =
@@ -170,7 +182,7 @@ void IRVisitor::visitBranchInst(llvm::BranchInst &I){
         _builder->AddSuccessorBuilder(&destBuilder);
     }
     else{
-        TR::IlValue * condition = _methodBuilder->getIlValue(I.getCondition());
+        TR::IlValue * condition = getIlValue(I.getCondition());
         TR::IlBuilder * ifTrue = _methodBuilder->getByteCodeBuilder(I.getSuccessor(0));
         TR::IlBuilder * ifFalse = _methodBuilder->getByteCodeBuilder(I.getSuccessor(1));
         assert(ifTrue && ifFalse && condition && "Failed to find destination blocks for ifThenElse");
@@ -218,19 +230,33 @@ void IRVisitor::visitGetElementPtrInst(llvm::GetElementPtrInst &I){
                                                                 getIlValue(I.getOperand(0)));
     }
     else if (I.getSourceElementType()->isArrayTy()){
+        llvm::ConstantInt * indextConstantInt = llvm::dyn_cast<llvm::ConstantInt>(I.getOperand(2));
+        int64_t elementIndex = indextConstantInt->getSExtValue();
+        if (I.getSourceElementType()->getArrayElementType()->isArrayTy()){
+            elementIndex *= I.getSourceElementType()->getArrayNumElements();
+        }
         ilValue =
             _builder->IndexAt(
                 _td->PointerTo(
                     _methodBuilder->getIlType(_td,I.getSourceElementType()->getArrayElementType())),
                 getIlValue(I.getOperand(0)),
-                getIlValue(I.getOperand(2)));
+                _builder->ConstInt32(elementIndex));
     }
     else {
-        assert(0 && "unknown source type for getElementPtr Instruction");
+        assert((I.getNumOperands() == 2) && "unhandled getElementPtr case");
+        ilValue = _builder->IndexAt(
+            _td->PointerTo(
+                _methodBuilder->getIlType(_td, I.getSourceElementType())),
+            getIlValue(I.getOperand(0)),
+            getIlValue(I.getOperand(1)));
     }
 
     _methodBuilder->mapIRtoIlValue(&I, ilValue);
 }
+
+//void IRVisitor::visitPHINode(llvm::PHINode &I){
+
+//}
 
 TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
     TR::IlValue * ilValue = nullptr;
