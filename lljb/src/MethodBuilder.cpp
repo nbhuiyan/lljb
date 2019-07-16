@@ -69,6 +69,9 @@ TR::IlType * MethodBuilder::getIlType(TR::TypeDictionary * td, llvm::Type * type
         case llvm::Type::TypeID::StructTyID: // Structures
             ilType = td->LookupStruct(type->getStructName().data());
             break;
+        case llvm::Type::TypeID::ArrayTyID: // Arrays
+            ilType = getIlType(td,type->getArrayElementType());
+            break;
         case llvm::Type::TypeID::LabelTyID: // Label type
         case llvm::Type::TypeID::HalfTyID: // 16-bit floating point type
         case llvm::Type::TypeID::X86_FP80TyID: // 80-bit floating point type (X87)
@@ -77,7 +80,6 @@ TR::IlType * MethodBuilder::getIlType(TR::TypeDictionary * td, llvm::Type * type
         case llvm::Type::TypeID::X86_MMXTyID: // 64-bit MMX vectors -- X86
         case llvm::Type::TypeID::TokenTyID: // Tokens
         case llvm::Type::TypeID::FunctionTyID: // Functions
-        case llvm::Type::TypeID::ArrayTyID: // Arrays
         case llvm::Type::TypeID::VectorTyID: // SIMD "packed" format, or other vector types
         case llvm::Type::TypeID::MetadataTyID: // Metadata type
         default:
