@@ -14,7 +14,6 @@ void IRVisitor::visitInstruction(llvm::Instruction &I){
 }
 
 void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
-    llvm::outs() << "return inst: " << I << "\n";
     if (!I.getNumOperands()){
         _builder->Return();
     }
@@ -26,7 +25,6 @@ void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
 }
 
 void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
-    llvm::outs() << "alloca inst: " << I << " allocated type: " << *I.getAllocatedType() << "\n";
     TR::IlValue * ilValue = nullptr;
     if (I.getAllocatedType()->isStructTy()){
         ilValue = _builder->CreateLocalStruct(_methodBuilder->getIlType(_td,I.getAllocatedType()));
@@ -58,7 +56,6 @@ void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
 }
 
 void IRVisitor::visitLoadInst(llvm::LoadInst &I){
-    llvm::outs() << "load inst: " << I << "\n";
     llvm::Value * source = I.getPointerOperand();
     TR::IlValue * ilSrc = getIlValue(source);
     TR::IlValue * loadedVal = _builder->LoadAt(
@@ -72,7 +69,6 @@ void IRVisitor::visitLoadInst(llvm::LoadInst &I){
 }
 
 void IRVisitor::visitStoreInst(llvm::StoreInst &I){
-    llvm::outs() << "store inst: " << I << "\n";
     llvm::Value * dest = I.getPointerOperand();
     llvm::Value * value = I.getOperand(0);
     TR::IlValue * ilValue = getIlValue(value);
@@ -86,7 +82,6 @@ void IRVisitor::visitStoreInst(llvm::StoreInst &I){
 }
 
 void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
-    llvm::outs() << "binaryOp inst: " << I << "\n";
     TR::IlValue * lhs = getIlValue(I.getOperand(0));
     TR::IlValue * rhs = getIlValue(I.getOperand(1));
     TR::IlValue * result = nullptr;
@@ -116,7 +111,6 @@ void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
 }
 
 void IRVisitor::visitCmpInst(llvm::CmpInst &I){
-    llvm::outs() << "cmp inst: " << I << "\n";
     TR::IlValue * lhs = getIlValue(I.getOperand(0));
     TR::IlValue * rhs = getIlValue(I.getOperand(1));
 
@@ -173,7 +167,6 @@ void IRVisitor::visitCmpInst(llvm::CmpInst &I){
 }
 
 void IRVisitor::visitBranchInst(llvm::BranchInst &I){
-    llvm::outs() << "Branch inst: " << I /*<< "dest: " << *(I.getOperand(0)) */<< "\n";
     if (I.isUnconditional()){
         llvm::Value * dest = I.getSuccessor(0);
         TR::BytecodeBuilder * destBuilder = _methodBuilder->getByteCodeBuilder(dest);
@@ -191,7 +184,6 @@ void IRVisitor::visitBranchInst(llvm::BranchInst &I){
 }
 
 void IRVisitor::visitCallInst(llvm::CallInst &I){
-    llvm::outs() << "call inst: " << I << "\n";
     TR::IlValue * result = nullptr;
     llvm::Function * callee = I.getCalledFunction();
     const char * calleeName = callee->getName().data();
@@ -212,7 +204,6 @@ void IRVisitor::visitCallInst(llvm::CallInst &I){
 }
 
 void IRVisitor::visitCastInst(llvm::CastInst &I){
-    llvm::outs() << "Cast inst: " << I << "\n";
     TR::IlValue * srcVal = getIlValue(I.getOperand(0));
     TR::IlType * toIlType = _methodBuilder->getIlType(_td,I.getDestTy());
     TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
@@ -220,7 +211,6 @@ void IRVisitor::visitCastInst(llvm::CastInst &I){
 }
 
 void IRVisitor::visitGetElementPtrInst(llvm::GetElementPtrInst &I){
-    llvm::outs() << "getElementPtrInst: " << I << "\n";
     TR::IlValue * ilValue = nullptr;
     if (I.getSourceElementType()->isStructTy()){
         llvm::ConstantInt * indextConstantInt = llvm::dyn_cast<llvm::ConstantInt>(I.getOperand(2));
@@ -253,10 +243,6 @@ void IRVisitor::visitGetElementPtrInst(llvm::GetElementPtrInst &I){
 
     _methodBuilder->mapIRtoIlValue(&I, ilValue);
 }
-
-//void IRVisitor::visitPHINode(llvm::PHINode &I){
-
-//}
 
 TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
     TR::IlValue * ilValue = nullptr;
