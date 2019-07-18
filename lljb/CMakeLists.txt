@@ -16,6 +16,8 @@ target_include_directories(lljb
 )
 
 target_link_libraries(lljb
-        jitbuilder
-        LLVMIRReader
+    jitbuilder
+    LLVMIRReader
+    LLVMCore
+    LLVMSupport
 )

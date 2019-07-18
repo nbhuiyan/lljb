@@ -1,0 +1,24 @@
+language: cpp
+os: linux
+compiler: gcc
+dist: xenial
+cache: ccache
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc
+      - cmake
+      - ninja-build
+      - clang
+      - bison
+before_script:
+  - ulimit -c unlimited
+  - ccache -s -z
+script:
+  - mkdir build && cd build
+  - cmake -G Ninja ..
+  - ninja
+after_script:
+  - ccache -s

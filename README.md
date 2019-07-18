@@ -2,7 +2,7 @@
 
 LLVM + JitBuilder = LLJB
 
-*new project, so check back for more documentation later...*
+[![Build Status](https://travis-ci.org/nbhuiyan/lljb.svg?branch=master)](https://travis-ci.org/nbhuiyan/lljb)
 
 # About
 
