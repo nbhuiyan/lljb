@@ -12,6 +12,8 @@ addons:
       - cmake
       - ninja-build
       - clang
+      - llvm
+      - llvm-dev
       - bison
 before_script:
   - ulimit -c unlimited

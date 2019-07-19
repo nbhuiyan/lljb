@@ -4,8 +4,6 @@ add_executable(lljb_run
 
 target_include_directories(lljb_run
     PRIVATE
-        ${CMAKE_SOURCE_DIR}/third_party/llvm/include/
-        ${CMAKE_BINARY_DIR}/third_party/llvm/include/
         ${CMAKE_SOURCE_DIR}/third_party/omr/jitbuilder/
         ${CMAKE_SOURCE_DIR}/third_party/omr/compiler/
         ${CMAKE_SOURCE_DIR}/third_party/omr/

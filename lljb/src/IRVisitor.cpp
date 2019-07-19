@@ -3,6 +3,8 @@
 #include "ilgen/TypeDictionary.hpp"
 #include "ilgen/BytecodeBuilder.hpp"
 
+#include "llvm/Support/raw_ostream.h"
+
 #include <cassert>
 #include <vector>
 
