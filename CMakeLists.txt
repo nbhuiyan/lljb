@@ -40,18 +40,16 @@ set(OMR_THR_FORK_SUPPORT OFF CACHE BOOL "")
 set(OMR_WARNINGS_AS_ERRORS OFF CACHE BOOL "")
 set(OMR_DDR OFF CACHE BOOL "")
 
-
-# LLVM Configuration
-
-# set(LLVM_BUILD_TOOLS OFF CACHE BOOL "")
-# set(LLVM_BUILD_UTILS OFF CACHE BOOL "")
-
-set(LLVM_SRC_ROOT ${CMAKE_CURRENT_LIST_DIR}/third_party/llvm/)
-set(LLVM_OBJ_ROOT ${CMAKE_CURRENT_LIST_DIR}/build/third_party/llvm/)
-set(LLVM_PATH ${CMAKE_CURRENT_LIST_DIR}/build/third_party/llvm/)
-
 add_subdirectory(third_party/omr)
-add_subdirectory(third_party/llvm)
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(ENV{PATH} "/usr/local/opt/llvm/bin/")
+endif()
+
+find_package(LLVM REQUIRED CONFIG)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+include_directories(${LLVM_INCLUDE_DIRS})
 
 add_subdirectory(lljb)
 add_subdirectory(test)

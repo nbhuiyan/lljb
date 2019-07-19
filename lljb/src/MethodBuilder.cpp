@@ -4,6 +4,8 @@
 #include "lljb/IRVisitor.hpp"
 #include "lljb/Compiler.hpp"
 
+#include "llvm/Support/raw_ostream.h"
+
 #include <string>
 #include <cstdio>
 #include <vector>

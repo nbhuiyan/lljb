@@ -1,12 +1,8 @@
 #include "lljb/Module.hpp"
 
-#include "llvm/Support/SourceMgr.h"
 #include "llvm/IRReader/IRReader.h"
-
-#include "llvm/IR/Function.h" //temp
-#include "llvm/IR/BasicBlock.h" //temp
-
-#include "lljb/IRVisitor.hpp" //temp
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/SourceMgr.h"
 
 
 namespace lljb{
