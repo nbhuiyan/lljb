@@ -7,13 +7,14 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
+      - llvm-toolchain-xenial-8
     packages:
       - gcc
       - cmake
       - ninja-build
-      - clang
-      - llvm
-      - llvm-dev
+      - clang-8
+      - llvm-8
+      - llvm-8-dev
       - bison
 before_script:
   - ulimit -c unlimited
