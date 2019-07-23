@@ -15,7 +15,8 @@ Eclipse OMR project's JitBuilder library.
 
 * CMake 3.5 and newer
 * clang 8.0
-* [LLVM build requirements](https://llvm.org/docs/GettingStarted.html#requirements)
+* llvm 8.0
+* ninja
 * [Eclipse OMR Build requirements](https://github.com/eclipse/omr/blob/master/doc/BuildingWithCMake.md#requirements)
 
 ## Build instructions
@@ -35,13 +36,13 @@ mkdir build && cd build
 ### Configure
 
 ```
-cmake <path-to-lljb>
+cmake -G Ninja <path-to-lljb>
 ```
 
 ### Build
 
 ```
-make -j<num-cpu-threads>
+ninja -j<num-cpu-threads>
 ```
 
 ### Test
