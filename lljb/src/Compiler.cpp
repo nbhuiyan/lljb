@@ -7,7 +7,11 @@
 
 #include <cstdio>
 #include <ctime>
-#include <unistd.h> // todo: set this to only be used Linux and macOS
+
+#if defined(OSX) || defined(LINUX)
+#include <unistd.h>
+#endif
+
 #include <string>
 #include <vector>
 
@@ -48,8 +52,10 @@ void * Compiler::getFunctionAddress(llvm::Function * func){
     if (!entry){ // temporary hack to call stdlib functions
         if (func->getName().equals("printf")) entry = (void *) &printf; // c/cpp
         else if (func->getName().equals("putc")) entry = (void *) &putc; // c/cpp
-        else if (func->getName().equals("clock_gettime")) entry = (void *) &clock_gettime;
-        else if (func->getName().contains("usleep")) entry = (void *) &usleep;
+        else if (func->getName().equals("clock_gettime")) entry = (void *) &clock_gettime; // c/cpp
+#if defined(OSX) || defined(LINUX)
+        else if (func->getName().contains("usleep")) entry = (void *) &usleep; // c/cpp
+#endif
         else assert( 0 && "function not found");
     }
     return entry;

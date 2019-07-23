@@ -174,7 +174,6 @@ void IRVisitor::visitBranchInst(llvm::BranchInst &I){
         TR::BytecodeBuilder * destBuilder = _methodBuilder->getByteCodeBuilder(dest);
         assert(destBuilder && "failed to find builder for target basic block");
         _builder->Goto(destBuilder);
-        _builder->AddSuccessorBuilder(&destBuilder);
     }
     else{
         TR::IlValue * condition = getIlValue(I.getCondition());
@@ -243,6 +242,36 @@ void IRVisitor::visitGetElementPtrInst(llvm::GetElementPtrInst &I){
             getIlValue(I.getOperand(1)));
     }
 
+    _methodBuilder->mapIRtoIlValue(&I, ilValue);
+}
+
+
+void IRVisitor::visitPHINode(llvm::PHINode &I){
+    unsigned incomingEdgeCount = I.getNumIncomingValues();
+    llvm::DenseMap<llvm::BasicBlock *, TR::IlValue *> valueMap;
+    TR::IlValue * ilValue = nullptr;
+    llvm::ConstantInt * firstCondition = llvm::dyn_cast<llvm::ConstantInt>(I.getIncomingValue(0));
+    unsigned isOr = firstCondition->getZExtValue();
+
+    for (unsigned i = 0; i < incomingEdgeCount; i++){
+        llvm::BasicBlock * basicBlock = I.getIncomingBlock(i);
+        llvm::Value * value = I.getIncomingValue(i);
+        if (value->getValueID() == llvm::Value::ValueTy::ConstantIntVal){
+            value = basicBlock->getTerminator()->getPrevNonDebugInstruction();
+        }
+        valueMap[basicBlock] = getIlValue(value);
+    }
+    if (isOr) ilValue = _builder->Or(valueMap[I.getIncomingBlock(0)],valueMap[I.getIncomingBlock(1)]);
+    else      ilValue = _builder->And(valueMap[I.getIncomingBlock(0)],valueMap[I.getIncomingBlock(1)]);
+
+    if (incomingEdgeCount > 2) {
+        unsigned currentCaseIndex = 2;
+        while (currentCaseIndex < incomingEdgeCount){
+            if (isOr) ilValue = _builder->Or(ilValue, valueMap[I.getIncomingBlock(currentCaseIndex)]);
+            else      ilValue = _builder->And(ilValue, valueMap[I.getIncomingBlock(currentCaseIndex)]);
+            currentCaseIndex++;
+        }
+    }
     _methodBuilder->mapIRtoIlValue(&I, ilValue);
 }
 
