@@ -42,7 +42,7 @@ cmake -G Ninja <path-to-lljb>
 ### Build
 
 ```
-ninja -j<num-cpu-threads>
+ninja
 ```
 
 ### Test
