@@ -257,7 +257,8 @@ void IRVisitor::visitPHINode(llvm::PHINode &I){
         llvm::BasicBlock * basicBlock = I.getIncomingBlock(i);
         llvm::Value * value = I.getIncomingValue(i);
         if (value->getValueID() == llvm::Value::ValueTy::ConstantIntVal){
-            value = basicBlock->getTerminator()->getPrevNonDebugInstruction();
+            llvm::BranchInst * branchInst = llvm::dyn_cast<llvm::BranchInst>(basicBlock->getTerminator());
+            value = branchInst->getCondition();
         }
         valueMap[basicBlock] = getIlValue(value);
     }
@@ -273,6 +274,14 @@ void IRVisitor::visitPHINode(llvm::PHINode &I){
         }
     }
     _methodBuilder->mapIRtoIlValue(&I, ilValue);
+}
+
+void IRVisitor::visitSelectInst(llvm::SelectInst &I){
+    TR::IlValue * condition = getIlValue(I.getCondition());
+    TR::IlValue * ifTrue = getIlValue(I.getTrueValue());
+    TR::IlValue * ifFalse = getIlValue(I.getFalseValue());
+    TR::IlValue * result = _builder->Select(condition, ifTrue, ifFalse);
+    _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
 TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
