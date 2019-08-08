@@ -138,15 +138,14 @@ TR::BytecodeBuilder * MethodBuilder::getByteCodeBuilder(llvm::Value * value){
     return _BBToBuilderMap[value];
 }
 
-void MethodBuilder::defineFunction(llvm::Function * func){
+void MethodBuilder::defineFunction(llvm::Function * func, std::size_t numParams, TR::IlType **paramTypes){
     if (_definedFunctions[func]) return;
     const char * name = func->getName().data();
     const char * fileName = func->getParent()->getSourceFileName().data();
     const char * lineNumer = "n/a";
     void * entry = _compiler->getFunctionAddress(func);
     TR::IlType * returnType = getIlType(typeDictionary(),func->getReturnType());
-    std::size_t  numArgs = func->arg_size();
-    if (!numArgs){
+    if (!numParams){
         DefineFunction(name,
                         fileName,
                         lineNumer,
@@ -155,18 +154,13 @@ void MethodBuilder::defineFunction(llvm::Function * func){
                         0);
     }
     else {
-        std::vector<TR::IlType *> argTypes;
-        for (auto arg = func->arg_begin(); arg != func->arg_end(); ++arg){
-            argTypes.push_back(getIlType(typeDictionary(),arg->getType()));
-        }
-
         DefineFunction(name,
                         fileName,
                         lineNumer,
                         entry,
                         returnType,
-                        numArgs,
-                        argTypes.data());
+                        numParams,
+                        paramTypes);
 
     }
     _definedFunctions[func] = entry;

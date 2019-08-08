@@ -231,19 +231,16 @@ void IRVisitor::visitCallInst(llvm::CallInst &I){
     TR::IlValue * result = nullptr;
     llvm::Function * callee = I.getCalledFunction();
     const char * calleeName = callee->getName().data();
-    _methodBuilder->defineFunction(callee);
-    std::size_t numArgs = callee->arg_size();
-    if (!numArgs){
-        result = _builder->Call(calleeName, numArgs);
+    std::size_t numParams = I.arg_size();
+    std::vector<TR::IlValue *> params;
+    std::vector<TR::IlType *> paramTypes;
+    for (int i = 0; i < numParams; i++){
+        TR::IlValue * parameter = getIlValue(I.getArgOperand(i));
+        params.push_back(parameter);
+        paramTypes.push_back(_methodBuilder->getIlType(_td,I.getArgOperand(i)->getType()));
     }
-    else {
-        std::vector<TR::IlValue *> params;
-        for (int i = 0; i < numArgs; i++){
-            TR::IlValue * parameter = getIlValue(I.getArgOperand(i));
-            params.push_back(parameter);
-        }
-        result = _builder->Call(calleeName, numArgs, params.data());
-    }
+    _methodBuilder->defineFunction(callee,numParams, paramTypes.data());
+    result = _builder->Call(calleeName, numParams, params.data());
     _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
@@ -269,11 +266,11 @@ void IRVisitor::visitGetElementPtrInst(llvm::GetElementPtrInst &I){
             int64_t elementIndex = indextConstantInt->getSExtValue();
             elementIndex *= I.getSourceElementType()->getArrayNumElements();
             ilValue =
-            _builder->IndexAt(
-                _td->PointerTo(
-                    _methodBuilder->getIlType(_td,I.getSourceElementType()->getArrayElementType())),
-                getIlValue(I.getOperand(0)),
-                _builder->ConstInt32(elementIndex));
+                _builder->IndexAt(
+                    _td->PointerTo(
+                        _methodBuilder->getIlType(_td,I.getSourceElementType()->getArrayElementType())),
+                    getIlValue(I.getOperand(0)),
+                    _builder->ConstInt32(elementIndex));
         }
         else {
             TR::IlValue * elementIndex = getIlValue(I.getOperand(2));

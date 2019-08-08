@@ -40,7 +40,7 @@ public:
     char * getParamNameFromIndex(unsigned index);
     void mapIRtoIlValue(llvm::Value * irValue, TR::IlValue * ilValue);
     TR::BytecodeBuilder * getByteCodeBuilder(llvm::Value * value);
-    void defineFunction(llvm::Function * func);
+    void defineFunction(llvm::Function * func, std::size_t numParams, TR::IlType **paramTypes);
     void allocateLocal(llvm::Value * value, TR::IlType * allocatedType);
     char * getLocalNameFromValue(llvm::Value * value);
     char * getMemberNameFromIndex(unsigned index);
