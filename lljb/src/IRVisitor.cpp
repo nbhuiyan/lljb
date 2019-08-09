@@ -134,9 +134,11 @@ void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
         case llvm::Instruction::BinaryOps::Shl:
             result = _builder->ShiftL(lhs, _builder->ConvertTo(_td->Int32, rhs));
             break;
-        case llvm::Instruction::BinaryOps::LShr:
         case llvm::Instruction::BinaryOps::AShr:
             result = _builder->ShiftR(lhs, _builder->ConvertTo(_td->Int32, rhs));
+            break;
+        case llvm::Instruction::BinaryOps::LShr:
+            result = _builder->UnsignedShiftR(lhs, _builder->ConvertTo(_td->Int32, rhs));
             break;
         case llvm::Instruction::BinaryOps::And:
             result = _builder->And(lhs, rhs);
