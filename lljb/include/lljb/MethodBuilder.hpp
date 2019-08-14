@@ -41,7 +41,20 @@ public:
     void mapIRtoIlValue(llvm::Value * irValue, TR::IlValue * ilValue);
     TR::BytecodeBuilder * getByteCodeBuilder(llvm::Value * value);
     void defineFunction(llvm::Function * func);
+    void allocateLocal(llvm::Value * value, TR::IlType * allocatedType);
+    char * getLocalNameFromValue(llvm::Value * value);
     char * getMemberNameFromIndex(unsigned index);
+
+    /**
+     * @brief Check whether this llvm::Value corresponds to a local variable that
+     * we are going to store into or load from by checking the llvm::Value to local
+     * variable name mapping
+     *
+     * @param value the source or dest llvm::Value
+     * @return true if indirect load/store in cases of aggregates
+     * @return false if value corresponds to a local variable
+     */
+    bool isIndirectLoadOrStore(llvm::Value * value);
 
 private:
     void assignBuildersToBasicBlocks();
@@ -63,6 +76,8 @@ private:
     llvm::DenseMap<unsigned, char *> _parameterMap;
     llvm::DenseMap<llvm::Function *, void *> _definedFunctions;
     Compiler * _compiler;
+    llvm::DenseMap<llvm::Value *, char *> _localsMap;
+    int32_t _numLocals;
 
 }; /* class MethodBuilder */
 

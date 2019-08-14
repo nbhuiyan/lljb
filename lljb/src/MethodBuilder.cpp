@@ -16,7 +16,8 @@ namespace lljb {
 MethodBuilder::MethodBuilder(TR::TypeDictionary *td, llvm::Function &func, Compiler * compiler)
     : TR::MethodBuilder(td),
       _function(func),
-      _compiler(compiler){
+      _compiler(compiler),
+      _numLocals(0){
     DefineFile(func.getParent()->getSourceFileName().data());
     DefineLine("n/a"); // line numer is only available if the bitcode file was
                        // generated with debug info, hence not dealing with that
@@ -27,6 +28,7 @@ MethodBuilder::MethodBuilder(TR::TypeDictionary *td, llvm::Function &func, Compi
 }
 
 bool MethodBuilder::buildIL(){
+    AllLocalsHaveBeenDefined(); // treat all locals we define as temps
     State * state = new State();
     setVMState(state);
     assignBuildersToBasicBlocks();
@@ -170,8 +172,30 @@ void MethodBuilder::defineFunction(llvm::Function * func){
     _definedFunctions[func] = entry;
 }
 
+void MethodBuilder::allocateLocal(llvm::Value * value, TR::IlType * allocatedType){
+    assert((!_localsMap[value]) && "local already allocated");
+
+    std::string currentIndex = std::to_string(_numLocals);
+    char * name = new char[currentIndex.length()+2];
+    sprintf(name, "r%d",_numLocals);
+    _localsMap[value] = name;
+    _numLocals++;
+
+    DefineLocal(name, allocatedType);
+}
+
+bool MethodBuilder::isIndirectLoadOrStore(llvm::Value * value){
+    if (_localsMap[value]) return false;
+    return true;
+}
+
+char * MethodBuilder::getLocalNameFromValue(llvm::Value * value){
+    return _localsMap[value];
+}
+
 MethodBuilder::~MethodBuilder(){
     _parameterMap.clear();
+    _localsMap.clear();
 }
 
 } /* namespace lljb */
