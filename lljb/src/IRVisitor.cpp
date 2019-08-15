@@ -49,24 +49,29 @@ void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
                             _methodBuilder->getIlType(_td,type));
     }
     else{
-    ilValue =
-        _builder->CreateLocalArray(
-                            1,
-                            _methodBuilder->getIlType(_td,I.getAllocatedType()));
+        _methodBuilder->allocateLocal(
+            &I,
+            _methodBuilder->getIlType(_td, I.getAllocatedType()));
     }
     _methodBuilder->mapIRtoIlValue(&I, ilValue);
 }
 
 void IRVisitor::visitLoadInst(llvm::LoadInst &I){
     llvm::Value * source = I.getPointerOperand();
-    TR::IlValue * ilSrc = getIlValue(source);
-    TR::IlValue * loadedVal = _builder->LoadAt(
+    TR::IlValue * loadedVal = nullptr;
+    if (_methodBuilder->isIndirectLoadOrStore(source)){
+        TR::IlValue * ilSrc = getIlValue(source);
+        loadedVal = _builder->LoadAt(
                                 _td->PointerTo(_methodBuilder->getIlType(_td,I.getType())),
                                 _builder->
                                 IndexAt(
                                     _td->PointerTo(_methodBuilder->getIlType(_td,I.getType())),
                                     ilSrc,
                                     _builder->ConstInt32(0)));
+    }
+    else {
+        loadedVal = _builder->Load(_methodBuilder->getLocalNameFromValue(source));
+    }
     _methodBuilder->mapIRtoIlValue(&I, loadedVal);
 }
 
@@ -74,13 +79,17 @@ void IRVisitor::visitStoreInst(llvm::StoreInst &I){
     llvm::Value * dest = I.getPointerOperand();
     llvm::Value * value = I.getOperand(0);
     TR::IlValue * ilValue = getIlValue(value);
-
-    _builder->StoreAt(
+    if (_methodBuilder->isIndirectLoadOrStore(dest)){
+        _builder->StoreAt(
                 _builder->IndexAt(
                     _td->PointerTo(_methodBuilder->getIlType(_td,value->getType())),
                     _methodBuilder->getIlValue(dest),
                     _builder->ConstInt32(0)),
                 ilValue);
+    }
+    else {
+        _builder->Store(_methodBuilder->getLocalNameFromValue(dest), ilValue);
+    }
 }
 
 void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
