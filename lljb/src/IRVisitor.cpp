@@ -132,13 +132,19 @@ void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
             result = _builder->Div(lhs, rhs);
             break;
         case llvm::Instruction::BinaryOps::Shl:
-            result = _builder->ShiftL(lhs, _builder->ConvertTo(_td->Int32, rhs));
+            if (!I.getOperand(1)->getType()->isIntegerTy(32))
+                rhs = _builder->ConvertTo(_td->Int32, rhs);
+            result = _builder->ShiftL(lhs, rhs);
             break;
         case llvm::Instruction::BinaryOps::AShr:
-            result = _builder->ShiftR(lhs, _builder->ConvertTo(_td->Int32, rhs));
+            if (!I.getOperand(1)->getType()->isIntegerTy(32))
+                rhs = _builder->ConvertTo(_td->Int32, rhs);
+            result = _builder->ShiftR(lhs, rhs);
             break;
         case llvm::Instruction::BinaryOps::LShr:
-            result = _builder->UnsignedShiftR(lhs, _builder->ConvertTo(_td->Int32, rhs));
+            if (!I.getOperand(1)->getType()->isIntegerTy(32))
+                rhs = _builder->ConvertTo(_td->Int32, rhs);
+            result = _builder->UnsignedShiftR(lhs, rhs);
             break;
         case llvm::Instruction::BinaryOps::And:
             result = _builder->And(lhs, rhs);
@@ -250,6 +256,13 @@ void IRVisitor::visitCastInst(llvm::CastInst &I){
     TR::IlValue * srcVal = getIlValue(I.getOperand(0));
     TR::IlType * toIlType = _methodBuilder->getIlType(_td,I.getDestTy());
     TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
+    _methodBuilder->mapIRtoIlValue(&I, result);
+}
+
+void IRVisitor::visitZExtInst(llvm::ZExtInst &I){
+    TR::IlValue * srcVal = getIlValue(I.getOperand(0));
+    TR::IlType * toIlType = _methodBuilder->getIlType(_td,I.getDestTy());
+    TR::IlValue * result = _builder->UnsignedConvertTo(toIlType, srcVal);
     _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
