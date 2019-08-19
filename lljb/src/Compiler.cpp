@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <ctime>
+#include <cstring>
 
 #if defined(OSX) || defined(LINUX)
 #include <unistd.h>
@@ -56,7 +57,12 @@ void * Compiler::getFunctionAddress(llvm::Function * func){
 #if defined(OSX) || defined(LINUX)
         else if (func->getName().contains("usleep")) entry = (void *) &usleep; // c/cpp
 #endif
-        else assert( 0 && "function not found");
+        else if (func->getName().equals("strcpy")) entry = (void *) &strcpy;
+        else if (func->getName().equals("strlen")) entry = (void *) &strlen;
+        else {
+            llvm::outs() << "function being looked up:" << func->getName() << "\n";
+            assert( 0 && "function not found");
+        }
     }
     return entry;
 }
@@ -81,10 +87,19 @@ void Compiler::defineTypes(){
         _typeDictionary.DefineStruct(structName.data());
         unsigned elIndex = 0;
         for (auto elIter = structType->element_begin(); elIter != structType->element_end(); ++elIter){
-            _typeDictionary.DefineField(
+            llvm::Type * fieldType = structType->getElementType(elIndex);
+            if (fieldType->isAggregateType()){
+                _typeDictionary.DefineField(
                     structName.data(),
                     stringifyObjectMemberIndex(elIndex),
-                    MethodBuilder::getIlType(&_typeDictionary,structType->getElementType(elIndex)));
+                    _typeDictionary.PointerTo(MethodBuilder::getIlType(&_typeDictionary,fieldType)));
+            }
+            else {
+                _typeDictionary.DefineField(
+                    structName.data(),
+                    stringifyObjectMemberIndex(elIndex),
+                    MethodBuilder::getIlType(&_typeDictionary,fieldType));
+            }
             elIndex++;
         }
         _typeDictionary.CloseStruct(structName.data());

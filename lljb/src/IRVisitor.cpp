@@ -29,7 +29,24 @@ void IRVisitor::visitReturnInst(llvm::ReturnInst &I){
 void IRVisitor::visitAllocaInst(llvm::AllocaInst &I){
     TR::IlValue * ilValue = nullptr;
     if (I.getAllocatedType()->isStructTy()){
-        ilValue = _builder->CreateLocalStruct(_methodBuilder->getIlType(_td,I.getAllocatedType()));
+        llvm::StructType * llvmStruct = llvm::dyn_cast<llvm::StructType>(I.getAllocatedType());
+        ilValue = _builder->CreateLocalStruct(_methodBuilder->getIlType(_td,llvmStruct));
+        unsigned elIndex = 0;
+        for (auto elIter = llvmStruct->element_begin(); elIter != llvmStruct->element_end(); ++elIter){
+            llvm::Type * fieldType = llvmStruct->getElementType(elIndex);
+            if (fieldType->isArrayTy()){
+                TR::IlValue * arrayField = _builder->CreateLocalArray(
+                    fieldType->getArrayNumElements(),
+                    _methodBuilder->getIlType(_td,fieldType));
+                _builder->StoreAt(
+                    _builder->StructFieldInstanceAddress(
+                        llvmStruct->getStructName().data(),
+                        _methodBuilder->getMemberNameFromIndex(elIndex),
+                        ilValue),
+                    arrayField);
+            }
+            elIndex++;
+        }
     }
     else if (I.getAllocatedType()->isArrayTy()){
         llvm::Type * type = I.getAllocatedType();
@@ -97,24 +114,49 @@ void IRVisitor::visitBinaryOperator(llvm::BinaryOperator &I){
     TR::IlValue * rhs = getIlValue(I.getOperand(1));
     TR::IlValue * result = nullptr;
     switch (I.getOpcode()){
-        case llvm::BinaryOperator::Add:
-        case llvm::BinaryOperator::FAdd:
+        case llvm::Instruction::BinaryOps::Add:
+        case llvm::Instruction::BinaryOps::FAdd:
             result = _builder->Add(lhs,rhs);
             break;
-        case llvm::BinaryOperator::Sub:
-        case llvm::BinaryOperator::FSub:
+        case llvm::Instruction::BinaryOps::Sub:
+        case llvm::Instruction::BinaryOps::FSub:
             result = _builder->Sub(lhs, rhs);
             break;
-        case llvm::BinaryOperator::Mul:
-        case llvm::BinaryOperator::FMul:
+        case llvm::Instruction::BinaryOps::Mul:
+        case llvm::Instruction::BinaryOps::FMul:
             result = _builder->Mul(lhs, rhs);
             break;
-        case llvm::BinaryOperator::SDiv:
-        case llvm::BinaryOperator::FDiv:
-        case llvm::BinaryOperator::UDiv:
+        case llvm::Instruction::BinaryOps::SDiv:
+        case llvm::Instruction::BinaryOps::FDiv:
+        case llvm::Instruction::BinaryOps::UDiv:
             result = _builder->Div(lhs, rhs);
             break;
+        case llvm::Instruction::BinaryOps::Shl:
+            if (!I.getOperand(1)->getType()->isIntegerTy(32))
+                rhs = _builder->ConvertTo(_td->Int32, rhs);
+            result = _builder->ShiftL(lhs, rhs);
+            break;
+        case llvm::Instruction::BinaryOps::AShr:
+            if (!I.getOperand(1)->getType()->isIntegerTy(32))
+                rhs = _builder->ConvertTo(_td->Int32, rhs);
+            result = _builder->ShiftR(lhs, rhs);
+            break;
+        case llvm::Instruction::BinaryOps::LShr:
+            if (!I.getOperand(1)->getType()->isIntegerTy(32))
+                rhs = _builder->ConvertTo(_td->Int32, rhs);
+            result = _builder->UnsignedShiftR(lhs, rhs);
+            break;
+        case llvm::Instruction::BinaryOps::And:
+            result = _builder->And(lhs, rhs);
+            break;
+        case llvm::Instruction::BinaryOps::Or:
+            result = _builder->Or(lhs, rhs);
+            break;
+        case llvm::Instruction::BinaryOps::Xor:
+            result = _builder->Xor(lhs, rhs);
+            break;
         default:
+            llvm::outs() << "Instruction being visited: " << I << "\n";
             assert(0 && "Unknown binary operand");
             break;
     }
@@ -197,19 +239,16 @@ void IRVisitor::visitCallInst(llvm::CallInst &I){
     TR::IlValue * result = nullptr;
     llvm::Function * callee = I.getCalledFunction();
     const char * calleeName = callee->getName().data();
-    _methodBuilder->defineFunction(callee);
-    std::size_t numArgs = callee->arg_size();
-    if (!numArgs){
-        result = _builder->Call(calleeName, numArgs);
+    std::size_t numParams = I.arg_size();
+    std::vector<TR::IlValue *> params;
+    std::vector<TR::IlType *> paramTypes;
+    for (int i = 0; i < numParams; i++){
+        TR::IlValue * parameter = getIlValue(I.getArgOperand(i));
+        params.push_back(parameter);
+        paramTypes.push_back(_methodBuilder->getIlType(_td,I.getArgOperand(i)->getType()));
     }
-    else {
-        std::vector<TR::IlValue *> params;
-        for (int i = 0; i < numArgs; i++){
-            TR::IlValue * parameter = getIlValue(I.getArgOperand(i));
-            params.push_back(parameter);
-        }
-        result = _builder->Call(calleeName, numArgs, params.data());
-    }
+    _methodBuilder->defineFunction(callee,numParams, paramTypes.data());
+    result = _builder->Call(calleeName, numParams, params.data());
     _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
@@ -217,6 +256,13 @@ void IRVisitor::visitCastInst(llvm::CastInst &I){
     TR::IlValue * srcVal = getIlValue(I.getOperand(0));
     TR::IlType * toIlType = _methodBuilder->getIlType(_td,I.getDestTy());
     TR::IlValue * result = _builder->ConvertTo(toIlType, srcVal);
+    _methodBuilder->mapIRtoIlValue(&I, result);
+}
+
+void IRVisitor::visitZExtInst(llvm::ZExtInst &I){
+    TR::IlValue * srcVal = getIlValue(I.getOperand(0));
+    TR::IlType * toIlType = _methodBuilder->getIlType(_td,I.getDestTy());
+    TR::IlValue * result = _builder->UnsignedConvertTo(toIlType, srcVal);
     _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
@@ -230,17 +276,26 @@ void IRVisitor::visitGetElementPtrInst(llvm::GetElementPtrInst &I){
                                                                 getIlValue(I.getOperand(0)));
     }
     else if (I.getSourceElementType()->isArrayTy()){
-        llvm::ConstantInt * indextConstantInt = llvm::dyn_cast<llvm::ConstantInt>(I.getOperand(2));
-        int64_t elementIndex = indextConstantInt->getSExtValue();
         if (I.getSourceElementType()->getArrayElementType()->isArrayTy()){
+            llvm::ConstantInt * indextConstantInt = llvm::dyn_cast<llvm::ConstantInt>(I.getOperand(2));
+            int64_t elementIndex = indextConstantInt->getSExtValue();
             elementIndex *= I.getSourceElementType()->getArrayNumElements();
+            ilValue =
+                _builder->IndexAt(
+                    _td->PointerTo(
+                        _methodBuilder->getIlType(_td,I.getSourceElementType()->getArrayElementType())),
+                    getIlValue(I.getOperand(0)),
+                    _builder->ConstInt32(elementIndex));
         }
-        ilValue =
-            _builder->IndexAt(
-                _td->PointerTo(
-                    _methodBuilder->getIlType(_td,I.getSourceElementType()->getArrayElementType())),
-                getIlValue(I.getOperand(0)),
-                _builder->ConstInt32(elementIndex));
+        else {
+            TR::IlValue * elementIndex = getIlValue(I.getOperand(2));
+            ilValue =
+                _builder->IndexAt(
+                    _td->PointerTo(
+                        _methodBuilder->getIlType(_td,I.getSourceElementType()->getArrayElementType())),
+                    getIlValue(I.getOperand(0)),
+                    elementIndex);
+        }
     }
     else {
         assert((I.getNumOperands() == 2) && "unhandled getElementPtr case");
@@ -351,7 +406,8 @@ TR::IlValue * IRVisitor::createConstantDataArrayVal(llvm::Value * value){
 }
 
 TR::IlValue * IRVisitor::getIlValue(llvm::Value * value){
-    TR::IlValue * ilValue = nullptr;
+    TR::IlValue * ilValue = _methodBuilder->getIlValue(value);
+    if (ilValue) return ilValue;
     switch (value->getValueID()){
         /* Constants */
         case llvm::Value::ValueTy::ConstantExprVal:
@@ -401,7 +457,6 @@ TR::IlValue * IRVisitor::getIlValue(llvm::Value * value){
             break;
 
         default:
-            ilValue = _methodBuilder->getIlValue(value);
             break;
     }
     assert (ilValue && "failed to retrieve ilValue from llvm Value!");

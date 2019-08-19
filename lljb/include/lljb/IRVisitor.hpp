@@ -53,9 +53,14 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
      * llvm::SIToFPInst
      * llvm::TruncInst
      * llvm::UIToFPInst
-     * llvm::ZExtInst
      */
     void visitCastInst(llvm::CastInst &I);
+    /**
+     * ZExtInst needs to be handled separately from other cast instructions
+     * because we need to use UnsignedConvertTo service instead of ConvertTo
+     *
+     */
+    void visitZExtInst(llvm::ZExtInst &I);
 
     void visitGetElementPtrInst(llvm::GetElementPtrInst &I);
     void visitPHINode(llvm::PHINode &I);
