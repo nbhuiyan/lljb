@@ -43,7 +43,7 @@ set(OMR_DDR OFF CACHE BOOL "")
 add_subdirectory(third_party/omr)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(ENV{PATH} "/usr/local/opt/llvm/bin/")
+    set(ENV{PATH} "/usr/local/opt/llvm\@8/bin/:${PATH}")
 endif()
 
 find_package(LLVM 8 REQUIRED CONFIG)

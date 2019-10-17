@@ -24,9 +24,8 @@ matrix:
       osx_image: xcode10.1
       cache: ccache
       install:
-        - brew install llvm@8
-        - brew install ninja
-        - brew install ccache
+        - brew update-reset
+        - brew install llvm@8 ninja ccache
 before_script:
   - ulimit -c unlimited
   - ccache -s -z
