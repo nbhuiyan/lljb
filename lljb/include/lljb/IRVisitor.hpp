@@ -87,6 +87,7 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     void visitGetElementPtrInst(llvm::GetElementPtrInst &I);
     void visitPHINode(llvm::PHINode &I);
     void visitSelectInst(llvm::SelectInst &I);
+    void visitSwitchInst(llvm::SwitchInst &I);
 
 
     /************************************************************************
@@ -125,7 +126,6 @@ struct IRVisitor : public llvm::InstVisitor<IRVisitor> {
     //void visitVACopyInst(llvm::VACopyInst &I);
     //void visitIntrinsicInst(llvm::IntrinsicInst &I);
     //void visitInvokeInst(llvm::InvokeInst &I);
-    //void visitSwitchInst(llvm::SwitchInst &I);
     //void visitIndirectBrInst(llvm::IndirectBrInst &I);
     //void visitResumeInst(llvm::ResumeInst &I);
     //void visitUnreachableInst(llvm::UnreachableInst &I);

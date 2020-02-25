@@ -370,6 +370,18 @@ void IRVisitor::visitSelectInst(llvm::SelectInst &I){
     _methodBuilder->mapIRtoIlValue(&I, result);
 }
 
+void IRVisitor::visitSwitchInst(llvm::SwitchInst &I){
+    TR::IlBuilder * defaultBuilder = _methodBuilder->getByteCodeBuilder(I.getDefaultDest());
+    std::vector<TR::IlBuilder::JBCase *> cases;
+    for (auto caseIt = I.case_begin(); caseIt != I.case_end(); caseIt++){
+        int32_t caseValue = caseIt->getCaseValue()->getSExtValue();
+        TR::IlBuilder * caseBuilder = _methodBuilder->getByteCodeBuilder(caseIt->getCaseSuccessor());
+        TR::IlBuilder::JBCase * jbCase = _builder->MakeCase(caseValue, &caseBuilder, false);
+        cases.push_back(jbCase);
+    }
+    _builder->Switch(getIlValue(I.getCondition()), &defaultBuilder, I.getNumCases(), cases.data());
+}
+
 TR::IlValue * IRVisitor::createConstIntIlValue(llvm::Value * value){
     TR::IlValue * ilValue = nullptr;
     llvm::ConstantInt * constInt = llvm::dyn_cast<llvm::ConstantInt>(value);
